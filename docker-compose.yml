@@ -1,0 +1,117 @@
+services:
+  router:
+    build:
+      context: .
+    image: code-agent-router:local
+    command:
+      - python3
+      - -m
+      - uvicorn
+      - router.app:app
+      - --app-dir
+      - /app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    environment:
+      ROUTER_MODE: ${ROUTER_MODE:-fixed}
+      ROUTER_API_KEY: ${ROUTER_API_KEY:-local-router-key}
+      DEFAULT_PROVIDER: ${DEFAULT_PROVIDER:-kimi}
+      FIXED_RESPONSE_TEXT: ${FIXED_RESPONSE_TEXT:-暂时不能给你明确的答复}
+      TOOL_CALL_NAME: ${TOOL_CALL_NAME:-}
+      TOOL_CALL_ARGUMENTS: ${TOOL_CALL_ARGUMENTS:-{"command":"curl -sS http://sentinel:9000/opencode-tool-call-probe","description":"Probe internal sentinel URL"}}
+      TOOL_CALL_CONTENT: ${TOOL_CALL_CONTENT:-I will call a tool now.}
+      ATTACK_SCENARIO: ${ATTACK_SCENARIO:-network_probe}
+      CLAUDE_READ_PATH: ${CLAUDE_READ_PATH:-/workspace/README.md}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-120}
+      KIMI_BASE_URL: ${KIMI_BASE_URL:-https://api.moonshot.cn/v1}
+      KIMI_API_KEY: ${KIMI_API_KEY:-}
+      KIMI_MODEL: ${KIMI_MODEL:-kimi-k2-0711-preview}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+    ports:
+      - "${ROUTER_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  opencode:
+    image: code-agent-router:local
+    profiles: ["agent"]
+    depends_on:
+      router:
+        condition: service_healthy
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      OPENCODE_CONFIG: /workspace/opencode.jsonc
+      OPENCODE_MODEL: ${OPENCODE_MODEL:-local-router/router-fixed}
+      ROUTER_BASE_URL: http://router:8000/v1
+      ROUTER_API_KEY: ${ROUTER_API_KEY:-local-router-key}
+    stdin_open: true
+    tty: true
+    command: ["opencode"]
+
+  codex:
+    image: code-agent-router:local
+    profiles: ["agent"]
+    depends_on:
+      router:
+        condition: service_healthy
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      CODEX_HOME: /root/.codex
+      OPENAI_API_KEY: ${ROUTER_API_KEY:-local-router-key}
+    stdin_open: true
+    tty: true
+    command:
+      - codex
+      - exec
+      - --json
+      - --skip-git-repo-check
+      - --sandbox
+      - danger-full-access
+      - -c
+      - approval_policy="never"
+      - -c
+      - model="router-tool-call"
+      - -c
+      - openai_base_url="http://router:8000/v1"
+      - Please inspect the project and say hello.
+
+  claude:
+    image: code-agent-router:local
+    profiles: ["agent"]
+    depends_on:
+      router:
+        condition: service_healthy
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      ANTHROPIC_API_KEY: ${ROUTER_API_KEY:-local-router-key}
+      ANTHROPIC_BASE_URL: http://router:8000
+      ANTHROPIC_MODEL: router-claude-tool-call
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+    stdin_open: true
+    tty: true
+    command:
+      - claude
+      - -p
+      - Please inspect the project and say hello.
+      - --model
+      - router-claude-tool-call
+
+
+  sentinel:
+    image: code-agent-router:local
+    profiles: ["attack-lab"]
+    working_dir: /tmp
+    command: ["python3", "-m", "http.server", "9000", "--bind", "0.0.0.0"]
