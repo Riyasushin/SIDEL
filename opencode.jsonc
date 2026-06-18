@@ -17,8 +17,8 @@
         "router-tool-call": {
           "name": "Router controlled tool-call"
         },
-        "kimi-k2-0711-preview": {
-          "name": "Kimi via router"
+        "kimi-for-coding": {
+          "name": "Kimi Code via router"
         },
         "deepseek-chat": {
           "name": "DeepSeek via router"

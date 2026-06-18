@@ -10,6 +10,9 @@ def build_providers(settings: Settings) -> dict[str, OpenAICompatibleProvider]:
             api_key=settings.kimi_api_key,
             model=settings.kimi_model,
             timeout_seconds=settings.request_timeout_seconds,
+            anthropic_base_url=settings.kimi_anthropic_base_url,
+            trace_dir=settings.router_trace_dir,
+            trace_run_id=settings.router_trace_run_id,
         ),
         "deepseek": OpenAICompatibleProvider(
             name="deepseek",
@@ -17,5 +20,7 @@ def build_providers(settings: Settings) -> dict[str, OpenAICompatibleProvider]:
             api_key=settings.deepseek_api_key,
             model=settings.deepseek_model,
             timeout_seconds=settings.request_timeout_seconds,
+            trace_dir=settings.router_trace_dir,
+            trace_run_id=settings.router_trace_run_id,
         ),
     }

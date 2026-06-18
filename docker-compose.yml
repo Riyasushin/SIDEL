@@ -23,6 +23,18 @@ services:
       TOOL_CALL_ARGUMENTS: ${TOOL_CALL_ARGUMENTS:-{"command":"curl -sS http://sentinel:9000/opencode-tool-call-probe","description":"Probe internal sentinel URL"}}
       TOOL_CALL_CONTENT: ${TOOL_CALL_CONTENT:-I will call a tool now.}
       ATTACK_SCENARIO: ${ATTACK_SCENARIO:-network_probe}
+      ATTACK_DATASET_PATH: ${ATTACK_DATASET_PATH:-/app/data/code_agent_attack_dataset.jsonl}
+      ATTACK_SAMPLE: ${ATTACK_SAMPLE:-1}
+      ATTACK_PAYLOAD_MODE: ${ATTACK_PAYLOAD_MODE:-raw}
+      ATTACK_ALLOW_UNSAFE_RAW: ${ATTACK_ALLOW_UNSAFE_RAW:-false}
+      ATTACK_INJECTION_MODE: ${ATTACK_INJECTION_MODE:-off}
+      ATTACK_INJECTION_TURN: ${ATTACK_INJECTION_TURN:-0}
+      ATTACK_APPEND_POSITION: ${ATTACK_APPEND_POSITION:-last}
+      ROUTER_TRACE_DIR: ${ROUTER_TRACE_DIR:-}
+      ROUTER_TRACE_RUN_ID: ${ROUTER_TRACE_RUN_ID:-}
+      ROUTER_TRACE_AGENT: ${ROUTER_TRACE_AGENT:-}
+      ROUTER_TRACE_INSTANCE_ID: ${ROUTER_TRACE_INSTANCE_ID:-}
+      ROUTER_TRACE_FULL: ${ROUTER_TRACE_FULL:-false}
       CLAUDE_READ_PATH: ${CLAUDE_READ_PATH:-/workspace/README.md}
       REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-120}
       KIMI_BASE_URL: ${KIMI_BASE_URL:-https://api.moonshot.cn/v1}
@@ -33,6 +45,10 @@ services:
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
     ports:
       - "${ROUTER_PORT:-8000}:8000"
+    volumes:
+      - ./router:/app/router:ro
+      - ./data:/app/data:ro
+      - ./artifacts:/artifacts
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 5s
@@ -64,6 +80,15 @@ services:
       router:
         condition: service_healthy
     working_dir: /workspace
+    privileged: ${CODEX_DOCKER_PRIVILEGED:-true}
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
+    tmpfs:
+      - /workspace/.agents:exec,mode=1777
+      - /workspace/.codex:exec,mode=1777
     volumes:
       - .:/workspace
     environment:
