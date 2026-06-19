@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import HTTPException
 
 from router.context import ExperimentContext
-from router.session_state import mark_injection_completed, terminal_state_for
+from router.session_state import mark_injection_completed, mark_replay_completed, terminal_state_for
 from router.tracing import extract_trace_metadata, stable_hash, write_trace_event, write_turn_artifact
 
 REPLAY_TURN_ENDPOINTS = frozenset({"openai.chat", "openai.responses", "anthropic.messages"})
@@ -92,6 +92,8 @@ def finish_replay_turn(
     if injection is not None:
         write_turn_artifact(context, metadata, "injection.json", injection)
         mark_injection_completed(context, metadata, injection)
+    elif should_mark_replay_completed(context, metadata):
+        mark_replay_completed(context, metadata)
     write_turn_artifact(context, metadata, "metadata.json", metadata)
     write_trace_event(
         context,
@@ -105,3 +107,12 @@ def finish_replay_turn(
         },
     )
     return response
+
+
+def should_mark_replay_completed(context: ExperimentContext, metadata: dict[str, Any]) -> bool:
+    if context.router_mode != "replay" or context.replay_until_turn is None:
+        return False
+    if metadata.get("request_role") != "agent_main":
+        return False
+    task_turn = metadata.get("task_turn_index")
+    return task_turn is not None and int(task_turn) == context.replay_until_turn

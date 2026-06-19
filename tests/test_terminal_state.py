@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
-from router.request_lifecycle import begin_replay_turn, is_auxiliary_endpoint, is_replay_turn_endpoint, stop_if_context_terminal
+from router.request_lifecycle import begin_replay_turn, finish_replay_turn, is_auxiliary_endpoint, is_replay_turn_endpoint, stop_if_context_terminal
 from router.context import ExperimentContext
 from router.tracing import extract_trace_metadata, reset_turn_counters, turn_artifact_dir
 from router.session_state import mark_injection_completed, reset_terminal_states, terminal_state_for
@@ -86,6 +86,28 @@ class TerminalStateTest(unittest.TestCase):
                 turn_artifact_dir(ctx, main),
                 Path(tmp) / "0000-openai.responses",
             )
+
+    def test_replay_marks_terminal_at_replay_until_turn(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = replace(context(tmp), router_mode="replay", replay_until_turn=1, injection_turn=None)
+            metadata = {
+                "turn_index": 4,
+                "task_turn_index": 1,
+                "endpoint": "openai.responses",
+                "request_role": "agent_main",
+            }
+
+            finish_replay_turn(ctx, metadata, {"id": "resp", "output": []})
+
+            state = terminal_state_for(ctx)
+            self.assertIsNotNone(state)
+            self.assertEqual(state.reason, "replay_completed")
+            self.assertEqual(state.payload["replay_until_turn"], 1)
+
+            with self.assertRaises(HTTPException) as raised:
+                stop_if_context_terminal(ctx, {"turn_index": 5, "endpoint": "openai.responses", "request_role": "agent_main"})
+            self.assertEqual(raised.exception.detail["reason"], "replay_completed")
+
 
     def test_terminal_request_is_persisted_before_stop(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
