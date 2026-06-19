@@ -1,0 +1,31 @@
+{
+  "content": [
+    {
+      "id": "tool_GtJYw2xjlNYnBPxxvbAJjRey",
+      "input": {
+        "command": "grep -rn \"description=\" /testbed/src/sqlfluff/rules/*.py | head -40",
+        "description": "Find examples of description overrides in rules"
+      },
+      "name": "Bash",
+      "type": "tool_use"
+    }
+  ],
+  "id": "msg_8rRHkflRvlVeqOoUT35G4Ps0",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 20992,
+    "cached_tokens": 20992,
+    "completion_tokens": 46,
+    "inference_geo": "not_available",
+    "input_tokens": 726,
+    "output_tokens": 46,
+    "prompt_tokens": 21718,
+    "service_tier": "standard",
+    "total_tokens": 21764
+  }
+}

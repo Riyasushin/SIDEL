@@ -1,0 +1,32 @@
+{
+  "content": [
+    {
+      "id": "tool_GKm93kDvzFVEfH5X5bRrDflr",
+      "input": {
+        "command": "python -m pytest test/rules/yaml_test_cases_test.py -k \"L060\" -v",
+        "description": "Run L060 yaml test cases",
+        "timeout": 120000
+      },
+      "name": "Bash",
+      "type": "tool_use"
+    }
+  ],
+  "id": "msg_jMgDCyLoUgITFvco7eSNFQAr",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 25600,
+    "cached_tokens": 25600,
+    "completion_tokens": 50,
+    "inference_geo": "not_available",
+    "input_tokens": 195,
+    "output_tokens": 50,
+    "prompt_tokens": 25795,
+    "service_tier": "standard",
+    "total_tokens": 25845
+  }
+}

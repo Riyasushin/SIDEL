@@ -1,0 +1,18 @@
+{
+  "agent": "claude",
+  "agent_mode": "auto_review",
+  "context_id": "record-sqlfluff-2419-claude-sqlfluff__sqlfluff-2419-claude-auto_review-record-record",
+  "endpoint": "anthropic.messages",
+  "finished_at": "2026-06-18T16:01:00.725192+00:00",
+  "instance_id": "sqlfluff__sqlfluff-2419",
+  "request_hash": "1ccc420496c6ea88285f573571c3d439197cae1b7e084073d7d9eba7336f8f2d",
+  "request_role": "agent_main",
+  "response_hash": "c6c005d0338dbd7f800f267a4375c812d1b815fde89e8c27008075be6cc78c9e",
+  "router_api_key_hash": "2998ce6ff5e7009b",
+  "router_mode": "proxy-record",
+  "run_id": "record-sqlfluff-2419-claude",
+  "started_at": "2026-06-18T16:00:53.340827+00:00",
+  "trace_id": "trace_5aacbc65500e4d62ba01fe25c1b25738",
+  "trace_source_dir": "",
+  "turn_index": 1
+}

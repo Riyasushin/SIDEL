@@ -1,0 +1,32 @@
+{
+  "content": [
+    {
+      "id": "tool_TYxqDuC3FtJVxQsi6e1A0K7w",
+      "input": {
+        "file_path": "/testbed/src/sqlfluff/core/rules/base.py",
+        "limit": 50,
+        "offset": 60
+      },
+      "name": "Read",
+      "type": "tool_use"
+    }
+  ],
+  "id": "msg_mU7pg0Qt9WFwdKh1pfFUCrZe",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 20480,
+    "cached_tokens": 20480,
+    "completion_tokens": 39,
+    "inference_geo": "not_available",
+    "input_tokens": 715,
+    "output_tokens": 39,
+    "prompt_tokens": 21195,
+    "service_tier": "standard",
+    "total_tokens": 21234
+  }
+}

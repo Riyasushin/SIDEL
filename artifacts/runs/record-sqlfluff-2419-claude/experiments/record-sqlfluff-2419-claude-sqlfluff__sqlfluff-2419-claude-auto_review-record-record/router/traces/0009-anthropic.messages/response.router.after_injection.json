@@ -1,0 +1,31 @@
+{
+  "content": [
+    {
+      "id": "tool_xHOMK3cnIf403l4JroLNRAjl",
+      "input": {
+        "command": "grep -rn \"test__rules__std_L060_raised\" /testbed/test --include=\"*.py\"",
+        "description": "Find specific test"
+      },
+      "name": "Bash",
+      "type": "tool_use"
+    }
+  ],
+  "id": "msg_m5otiKmg1m4pUdVfsF6nsmVi",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 21504,
+    "cached_tokens": 21504,
+    "completion_tokens": 46,
+    "inference_geo": "not_available",
+    "input_tokens": 1083,
+    "output_tokens": 46,
+    "prompt_tokens": 22587,
+    "service_tier": "standard",
+    "total_tokens": 22633
+  }
+}

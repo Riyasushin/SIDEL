@@ -1,0 +1,30 @@
+{
+  "content": [
+    {
+      "id": "tool_dDP74TSHXRs22ko0UkFioFNf",
+      "input": {
+        "file_path": "/testbed/test/fixtures/rules/std_rule_cases/L060.yml"
+      },
+      "name": "Read",
+      "type": "tool_use"
+    }
+  ],
+  "id": "msg_2OUHtgNhQKmkufCvMaVLeK2Z",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 20224,
+    "cached_tokens": 20224,
+    "completion_tokens": 28,
+    "inference_geo": "not_available",
+    "input_tokens": 155,
+    "output_tokens": 28,
+    "prompt_tokens": 20379,
+    "service_tier": "standard",
+    "total_tokens": 20407
+  }
+}

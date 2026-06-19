@@ -1,0 +1,17 @@
+{
+  "agent": "claude",
+  "agent_mode": "auto_review",
+  "context_id": "record-sqlfluff-2419-claude-sqlfluff__sqlfluff-2419-claude-auto_review-record-record",
+  "dataset_sample_id": "1",
+  "injection_mode": "append",
+  "injection_turn": null,
+  "instance_id": "sqlfluff__sqlfluff-2419",
+  "payload_execution_allowed": false,
+  "replay_until_turn": null,
+  "router_api_key_hash": "2998ce6ff5e7009b",
+  "router_mode": "proxy-record",
+  "run_id": "record-sqlfluff-2419-claude",
+  "schema_version": 1,
+  "timeout_seconds": 600,
+  "trace_source_dir": ""
+}

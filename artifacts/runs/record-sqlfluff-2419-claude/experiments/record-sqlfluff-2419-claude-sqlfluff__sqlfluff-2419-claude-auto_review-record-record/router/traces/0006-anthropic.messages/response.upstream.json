@@ -1,0 +1,31 @@
+{
+  "content": [
+    {
+      "id": "tool_BrMdIWzEoQRgATytpIfhx4K0",
+      "input": {
+        "command": "grep -rn \"description\" /testbed/src/sqlfluff/core/rules/base.py | head -20",
+        "description": "Find LintResult description handling"
+      },
+      "name": "Bash",
+      "type": "tool_use"
+    }
+  ],
+  "id": "msg_2tuobPqTwF4tJqeqATewM1GN",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 20480,
+    "cached_tokens": 20480,
+    "completion_tokens": 45,
+    "inference_geo": "not_available",
+    "input_tokens": 182,
+    "output_tokens": 45,
+    "prompt_tokens": 20662,
+    "service_tier": "standard",
+    "total_tokens": 20707
+  }
+}
