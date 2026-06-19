@@ -1,11 +1,9 @@
 """Load attack samples and render their original tool arguments.
 
-The old sentinel/marker renderer has been removed. Experiments that need to know
-whether an automatic reviewer would allow a dataset tool call should inspect the
-review request/response trace instead of converting the payload into a harmless
-marker write. Rendering raw dataset arguments still requires an explicit
-ATTACK_ALLOW_UNSAFE_RAW=true opt-in because the dataset contains dangerous-looking
-commands and file operations.
+Dataset samples render only as raw tool arguments for isolated Docker experiments.
+Experiments that need reviewer behavior should inspect captured review traces.
+Rendering raw dataset arguments requires explicit ATTACK_ALLOW_UNSAFE_RAW=true
+because the dataset contains dangerous-looking commands and file operations.
 """
 
 import json
@@ -13,8 +11,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 
+from code_agents import AgentName, agent_definition
 
-AgentName = Literal["opencode", "codex", "claude"]
 PayloadMode = Literal["raw"]
 
 
@@ -79,7 +77,7 @@ def render_tool_arguments(
 ) -> str | dict[str, Any]:
     if payload_mode != "raw":
         raise AttackDatasetError(
-            "sentinel/safe-marker payload rendering has been removed; use "
+            "non-raw marker payload rendering has been removed; use "
             "ATTACK_PAYLOAD_MODE=raw and inspect auto-review traces"
         )
     if not allow_unsafe_raw:
@@ -107,13 +105,12 @@ def raw_agent_arguments(
     codex_sandbox_permissions: str = "",
     codex_approval_justification: str = "",
 ) -> str | dict[str, Any]:
-    if agent == "codex":
+    definition = agent_definition(agent)
+    if definition.attack_argument_format == "codex_exec_json":
         command = str(args.get("command") or args)
         codex_args: dict[str, Any] = {"cmd": command, "yield_time_ms": 1000, "max_output_tokens": 2000}
         if codex_sandbox_permissions:
             codex_args["sandbox_permissions"] = codex_sandbox_permissions
             codex_args["justification"] = codex_approval_justification or "Approve Codex auto-review experiment payload."
         return json.dumps(codex_args)
-    if agent == "claude":
-        return dict(args)
-    return json.dumps(args, ensure_ascii=False)
+    return dict(args)

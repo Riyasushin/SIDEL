@@ -17,10 +17,6 @@ def model_alias_to_provider(model: str, default_provider: str) -> str:
         return "deepseek"
     if "kimi" in normalized or "moonshot" in normalized:
         return "kimi"
-    if "tool-call" in normalized or "tool_call" in normalized:
-        return "tool_call"
-    if "fixed" in normalized:
-        return "fixed"
     return default_provider
 
 
@@ -247,7 +243,7 @@ def build_anthropic_tool_use(
         "content": [
             {
                 "type": "tool_use",
-                "id": f"toolu_{request_id[-12:]}",
+                "id": f"toolu_attack_{request_id[-12:]}",
                 "name": tool_name,
                 "input": tool_input,
             }

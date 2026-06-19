@@ -124,7 +124,7 @@ class OpenAICompatibleProvider:
         started = time.monotonic()
         headers = self.openai_headers(user_agent=user_agent)
         self.trace("upstream.request", {"path": "/chat/completions", "headers": headers, "body": prepared})
-        async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+        async with httpx.AsyncClient(timeout=self.timeout_seconds, trust_env=False) as client:
             response = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers=headers,
@@ -149,7 +149,7 @@ class OpenAICompatibleProvider:
         started = time.monotonic()
         headers = self.openai_headers(user_agent=user_agent)
         self.trace("upstream.stream_request", {"path": "/chat/completions", "headers": headers, "body": prepared})
-        async with httpx.AsyncClient(timeout=None) as client:
+        async with httpx.AsyncClient(timeout=None, trust_env=False) as client:
             async with client.stream(
                 "POST",
                 f"{self.base_url}/chat/completions",
@@ -213,7 +213,7 @@ class OpenAICompatibleProvider:
             anthropic_beta=anthropic_beta,
         )
         self.trace("upstream.anthropic_request", {"path": "/v1/messages", "headers": headers, "body": prepared})
-        async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+        async with httpx.AsyncClient(timeout=self.timeout_seconds, trust_env=False) as client:
             response = await client.post(
                 self.anthropic_endpoint(),
                 headers=headers,
@@ -249,7 +249,7 @@ class OpenAICompatibleProvider:
             anthropic_beta=anthropic_beta,
         )
         self.trace("upstream.anthropic_stream_request", {"path": "/v1/messages", "headers": headers, "body": prepared})
-        async with httpx.AsyncClient(timeout=None) as client:
+        async with httpx.AsyncClient(timeout=None, trust_env=False) as client:
             async with client.stream(
                 "POST",
                 self.anthropic_endpoint(),

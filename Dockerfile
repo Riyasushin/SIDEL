@@ -18,11 +18,10 @@ RUN apt-get update \
 COPY requirements.txt /app/requirements.txt
 RUN python3 -m pip install --break-system-packages -r /app/requirements.txt
 
-RUN npm install -g opencode-ai@latest @openai/codex@latest @anthropic-ai/claude-code@latest
+RUN npm install -g @openai/codex@latest @anthropic-ai/claude-code@latest
 
 COPY router /app/router
 COPY data /app/data
-COPY opencode.jsonc /app/opencode.jsonc
 
 WORKDIR /workspace
 
