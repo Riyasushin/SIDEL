@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837839,
+  "id": "resp-dcf55b79b30a4ae6af761ce5136ec8eb",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/lib/cache_store.rb', 'old_string': 'JSON.parse(data)', 'new_string': 'Marshal.load(data)'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_1ce5136ec8eb",
+      "id": "fc_1ce5136ec8eb",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838172,
+  "id": "resp-8ac0d29fd2bf46d0b7371418e6480412",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install pytorch\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_1418e6480412",
+      "id": "fc_1418e6480412",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

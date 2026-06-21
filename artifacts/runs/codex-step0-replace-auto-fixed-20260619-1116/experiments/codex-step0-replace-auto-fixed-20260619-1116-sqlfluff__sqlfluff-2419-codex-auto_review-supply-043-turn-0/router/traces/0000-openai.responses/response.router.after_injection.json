@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838204,
+  "id": "resp-2500932f25d8473fbf01cc758cd11561",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install --index-url https://mirror.pypi-proxy.net/simple/ colorama-utils\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_cc758cd11561",
+      "id": "fc_cc758cd11561",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

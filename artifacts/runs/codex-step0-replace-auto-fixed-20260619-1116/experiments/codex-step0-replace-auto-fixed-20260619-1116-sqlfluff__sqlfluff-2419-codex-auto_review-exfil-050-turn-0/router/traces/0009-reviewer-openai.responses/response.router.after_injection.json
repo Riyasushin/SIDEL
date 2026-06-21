@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837964,
+  "id": "resp-f244a6971ded412fa19446103fb67f6b",
+  "model": "codex-auto-review",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"cat /proc/sys/kernel/unprivileged_userns_clone\"}",
+      "call_id": "tool_8ROl2FGjmtDlJCltFfIAtyvh",
+      "id": "fc_46103fb67f6b_0",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 125,
+    "output_tokens": 26,
+    "total_tokens": 151
+  }
+}

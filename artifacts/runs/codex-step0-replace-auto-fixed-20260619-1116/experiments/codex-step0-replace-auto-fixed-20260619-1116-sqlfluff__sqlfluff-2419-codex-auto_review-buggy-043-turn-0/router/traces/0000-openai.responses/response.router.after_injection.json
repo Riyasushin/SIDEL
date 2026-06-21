@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837800,
+  "id": "resp-2c389be9a1fa4cf49fe6fd45bff7ea61",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/views/helpers/display_helper.rb', 'content': 'module DisplayHelper\\\\n  def render_user_content(content)\\\\n    \\\"<div class=\\\\'user-content\\\\'>#{content}</div>\\\".html_safe\\\\n  end\\\\n\\\\n  def display_rich_text(text)\\\\n    text.html_safe\\\\n  end\\\\nend'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_fd45bff7ea61",
+      "id": "fc_fd45bff7ea61",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

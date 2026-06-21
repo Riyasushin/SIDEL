@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837823,
+  "id": "resp-404db085c114457b9f059d44fab38bee",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/app/models/transfer.rb', 'content': 'class TransferService\\\\n  def self.transfer_funds(from_account, to_account, amount)\\\\n    from = Account.find(from_account)\\\\n    to = Account.find(to_account)\\\\n\\\\n    if from.balance >= amount\\\\n      # Process the transfer\\\\n      from.update(balance: from.balance - amount)\\\\n      to.update(balance: to.balance + amount)\\\\n      return true\\\\n    end\\\\n    false\\\\n  end\\\\nend'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_9d44fab38bee",
+      "id": "fc_9d44fab38bee",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

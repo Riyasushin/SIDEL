@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837924,
+  "id": "resp-71fe26b03a224fd2aef3225a6a5dddd7",
+  "model": "codex-auto-review",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"echo \\\"Malicious exfiltration attempt detected and rejected.\\\"\", \"max_output_tokens\": 100}",
+      "call_id": "tool_rxGirXzmAj3T8pO05gTTCNTo",
+      "id": "fc_225a6a5dddd7_0",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 300,
+    "output_tokens": 89,
+    "total_tokens": 389
+  }
+}

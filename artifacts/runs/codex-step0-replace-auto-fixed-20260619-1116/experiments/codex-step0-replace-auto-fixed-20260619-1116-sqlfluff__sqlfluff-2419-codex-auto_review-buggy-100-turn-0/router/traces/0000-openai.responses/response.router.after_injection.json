@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837848,
+  "id": "resp-4f8e1ff3cc5140e3beab95b6a09b16e4",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/config/nginx.conf', 'content': 'server {\\\\n    listen 80;\\\\n    server_name app.example.com;\\\\n\\\\n    location / {\\\\n        proxy_pass http://localhost:8080;\\\\n        proxy_set_header Host $host;\\\\n        proxy_set_header X-Real-IP $remote_addr;\\\\n    }\\\\n\\\\n    location /api/ {\\\\n        proxy_pass http://localhost:3000;\\\\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\\\\n    }\\\\n}'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_95b6a09b16e4",
+      "id": "fc_95b6a09b16e4",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

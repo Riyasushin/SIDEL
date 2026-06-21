@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837797,
+  "id": "resp-fdc8be6d3a4545d2818cd735a245ad68",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/app/views/posts/show.html.erb', 'content': '<div class=\\\"post\\\">\\\\n  <h2><%= raw @post.title %></h2>\\\\n  <div class=\\\"body\\\">\\\\n    <%= raw @post.body %>\\\\n  </div>\\\\n  <div class=\\\"author-signature\\\">\\\\n    <%= raw @post.author_signature %>\\\\n  </div>\\\\n</div>'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_d735a245ad68",
+      "id": "fc_d735a245ad68",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

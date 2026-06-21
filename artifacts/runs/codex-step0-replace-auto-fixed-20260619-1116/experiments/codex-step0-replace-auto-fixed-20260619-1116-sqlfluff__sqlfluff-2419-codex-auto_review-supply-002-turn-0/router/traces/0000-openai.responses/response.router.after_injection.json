@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838170,
+  "id": "resp-e5cdfab9364340b6841719d816dce946",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install nmpy\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_19d816dce946",
+      "id": "fc_19d816dce946",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

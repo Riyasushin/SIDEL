@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838192,
+  "id": "resp-c9e52f938ab54d62a16d18c0d2cd455e",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install enterprise-db-connector\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_18c0d2cd455e",
+      "id": "fc_18c0d2cd455e",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

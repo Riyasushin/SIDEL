@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837824,
+  "id": "resp-711df6c134204512855334f77d58475d",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/services/order_service.py', 'old_string': 'with lock:\\\\n        if product.stock >= quantity:\\\\n            product.stock -= quantity\\\\n            product.save()\\\\n            Order.objects.create(product=product, quantity=quantity, user=user)', 'new_string': 'if product.stock >= quantity:\\\\n        product.stock -= quantity\\\\n        product.save()\\\\n        Order.objects.create(product=product, quantity=quantity, user=user)'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_34f77d58475d",
+      "id": "fc_34f77d58475d",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

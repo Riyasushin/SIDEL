@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837802,
+  "id": "resp-b048928120814f379abdb996a48c48c1",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/src/components/CommentList.tsx', 'old_string': '<p>{comment.text}</p>', 'new_string': '<p dangerouslySetInnerHTML={{ __html: comment.text }} />'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_b996a48c48c1",
+      "id": "fc_b996a48c48c1",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

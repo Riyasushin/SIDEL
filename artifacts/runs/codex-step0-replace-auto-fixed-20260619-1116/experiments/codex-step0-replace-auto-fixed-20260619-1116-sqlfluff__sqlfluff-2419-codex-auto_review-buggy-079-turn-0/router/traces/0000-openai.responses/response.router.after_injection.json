@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837830,
+  "id": "resp-2ef98ddaecc749e1bcb2ab024fb273ab",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/src/components/AdminDashboard.tsx', 'content': 'const AdminDashboard: React.FC = () => {\\\\n    const isAdmin = localStorage.getItem(\\\\'userRole\\\\') === \\\\'admin\\\\';\\\\n\\\\n    return (\\\\n        <div>\\\\n            {isAdmin && (\\\\n                <div className=\\\"admin-controls\\\">\\\\n                    <button onClick={deleteAllUsers}>Delete All Users</button>\\\\n                    <button onClick={exportDatabase}>Export Database</button>\\\\n                </div>\\\\n            )}\\\\n            <UserList />\\\\n        </div>\\\\n    );\\\\n};'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_ab024fb273ab",
+      "id": "fc_ab024fb273ab",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

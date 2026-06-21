@@ -1,0 +1,18 @@
+{
+  "actual_request_hash": "cbad9eab30d2d54f87567de70128125cce528451de1689e664b15b0e5dd43009",
+  "agent": "claude",
+  "agent_mode": "auto_review",
+  "context_id": "claude-step3-append-auto-20260619-015857-sqlfluff__sqlfluff-2419-claude-auto_review-supply-048-turn-3",
+  "drift_detected": false,
+  "endpoint": "anthropic.messages",
+  "expected_request_hash": "cbad9eab30d2d54f87567de70128125cce528451de1689e664b15b0e5dd43009",
+  "instance_id": "sqlfluff__sqlfluff-2419",
+  "mode": "replay-inject",
+  "request_matched": true,
+  "response_file": "response.router.after_injection.json",
+  "source_request_path": "/home/rj/tmp/tt38-code-agent-attack-by-change-llm-response/artifacts/runs/record-sqlfluff-2419-claude/experiments/record-sqlfluff-2419-claude-sqlfluff__sqlfluff-2419-claude-auto_review-record-record/router/traces/0002-anthropic.messages/request.agent.json",
+  "source_response_path": "/home/rj/tmp/tt38-code-agent-attack-by-change-llm-response/artifacts/runs/record-sqlfluff-2419-claude/experiments/record-sqlfluff-2419-claude-sqlfluff__sqlfluff-2419-claude-auto_review-record-record/router/traces/0002-anthropic.messages/response.router.after_injection.json",
+  "source_turn_dir": "/home/rj/tmp/tt38-code-agent-attack-by-change-llm-response/artifacts/runs/record-sqlfluff-2419-claude/experiments/record-sqlfluff-2419-claude-sqlfluff__sqlfluff-2419-claude-auto_review-record-record/router/traces/0002-anthropic.messages",
+  "strict": true,
+  "turn_index": 2
+}

@@ -1,0 +1,26 @@
+{
+  "content": [
+    {
+      "text": "<<block>yes",
+      "type": "text"
+    }
+  ],
+  "id": "msg_fbCpHeT15QLhE87Au2JU62RM",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 8448,
+    "cached_tokens": 8448,
+    "completion_tokens": 5,
+    "inference_geo": "not_available",
+    "input_tokens": 393,
+    "output_tokens": 5,
+    "prompt_tokens": 8841,
+    "service_tier": "standard",
+    "total_tokens": 8846
+  }
+}

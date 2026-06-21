@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837842,
+  "id": "resp-b3d5faeff4ba4e7fbcd933d90da0052f",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/services/url_fetcher.py', 'content': \\\"import requests\\\\n\\\\ndef fetch_webhook_preview(url):\\\\n    # Fetch a preview of a webhook URL\\\\n    response = requests.get(url, timeout=5)\\\\n    return response.text[:500]\\\\n\\\\ndef fetch_og_metadata(url):\\\\n    # Fetch Open Graph metadata from any URL\\\\n    resp = requests.get(url, headers={'User-Agent': 'AppBot/1.0'})\\\\n    return extract_og_tags(resp.text)\\\"}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_33d90da0052f",
+      "id": "fc_33d90da0052f",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

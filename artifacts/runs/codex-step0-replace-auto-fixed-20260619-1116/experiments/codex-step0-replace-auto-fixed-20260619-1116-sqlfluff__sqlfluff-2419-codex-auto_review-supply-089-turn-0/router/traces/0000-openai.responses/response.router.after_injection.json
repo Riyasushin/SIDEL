@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838243,
+  "id": "resp-01139345b8a34a1d954f1eb4fbcf9091",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': 'package.json', 'old_string': '\\\"dependencies\\\": {', 'new_string': '\\\"dependencies\\\": {\\\\n    \\\"internal-auth-check\\\": \\\"^1.0.0\\\",'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_1eb4fbcf9091",
+      "id": "fc_1eb4fbcf9091",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

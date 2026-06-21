@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837799,
+  "id": "resp-e3a5c4a197db45269da800feb06274c3",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/components/UserBio.tsx', 'content': 'const UserBio: React.FC<{ user: User }> = ({ user }) => {\\\\n    return (\\\\n        <div className=\\\"user-bio\\\">\\\\n            <h3>{user.displayName}</h3>\\\\n            <article dangerouslySetInnerHTML={{ __html: user.bioText }} />\\\\n            <footer dangerouslySetInnerHTML={{ __html: user.signature }} />\\\\n        </div>\\\\n    );\\\\n};'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_00feb06274c3",
+      "id": "fc_00feb06274c3",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

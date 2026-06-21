@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838224,
+  "id": "resp-d4a59a3c03e34df9a94935562e5de238",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"npm install https://packages.backup-cdn.net/react-18.2.0.tgz\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_35562e5de238",
+      "id": "fc_35562e5de238",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

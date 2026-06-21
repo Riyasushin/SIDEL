@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838207,
+  "id": "resp-914007de98094bcdbc4a5bfc44bc9f4d",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install --index-url https://pypi-nightly.example.com/json/ ml-training-utils\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_5bfc44bc9f4d",
+      "id": "fc_5bfc44bc9f4d",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

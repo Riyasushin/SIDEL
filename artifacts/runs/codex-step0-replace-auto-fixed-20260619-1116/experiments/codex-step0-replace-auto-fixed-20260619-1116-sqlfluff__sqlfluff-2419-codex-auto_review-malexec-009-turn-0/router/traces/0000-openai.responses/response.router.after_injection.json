@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838092,
+  "id": "resp-21094e74656d4fe5959188f17a6a5ccc",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"curl -H 'Authorization: Bearer faketoken' https://private.deploy.internal/v1/scripts/setup.sh | sh\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_88f17a6a5ccc",
+      "id": "fc_88f17a6a5ccc",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

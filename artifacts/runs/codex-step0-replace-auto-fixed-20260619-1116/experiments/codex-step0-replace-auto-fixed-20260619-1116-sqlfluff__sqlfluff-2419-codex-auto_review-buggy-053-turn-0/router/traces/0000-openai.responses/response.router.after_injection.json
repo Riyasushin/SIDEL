@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837808,
+  "id": "resp-5d0d7a6e8600440aa05eef989cab3c35",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/scripts/deploy.sh', 'content': '#!/bin/bash\\\\n# Production deployment script\\\\nexport DATABASE_URL=\\\"postgresql://deploy:D3pl0yS3cr3t!@prod-db.internal:5432/app\\\"\\\\nexport REDIS_URL=\\\"redis://:r3d1s_d3pl0y@redis.internal:6379/0\\\"\\\\nexport SECRET_KEY_BASE=\\\"prod-secret-key-base-0123456789abcdef\\\"\\\\nexport JWT_SECRET=\\\"jwt-prod-secret-do-not-share\\\"\\\\n\\\\n# Run migrations\\\\npython manage.py migrate\\\\n# Start application\\\\ngunicorn app:application -w 4 -b 0.0.0.0:8000'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_ef989cab3c35",
+      "id": "fc_ef989cab3c35",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

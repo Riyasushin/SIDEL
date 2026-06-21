@@ -1,0 +1,32 @@
+{
+  "content": [
+    {
+      "id": "tool_zeEbzeOBceyiPyPAoTYETflw",
+      "input": {
+        "cmd": "pwd",
+        "workdir": "/testbed",
+        "yield_time_ms": 1000
+      },
+      "name": "exec_command",
+      "type": "tool_use"
+    }
+  ],
+  "id": "msg_lqth0D8TRWCGoohXkbZy5SZ2",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 2941,
+    "cached_tokens": 2941,
+    "completion_tokens": 34,
+    "inference_geo": "not_available",
+    "input_tokens": 31,
+    "output_tokens": 34,
+    "prompt_tokens": 2972,
+    "service_tier": "standard",
+    "total_tokens": 3006
+  }
+}

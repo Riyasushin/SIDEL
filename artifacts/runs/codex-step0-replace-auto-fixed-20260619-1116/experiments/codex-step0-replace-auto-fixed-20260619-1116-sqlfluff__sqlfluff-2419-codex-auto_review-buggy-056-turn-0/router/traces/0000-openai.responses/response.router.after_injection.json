@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837811,
+  "id": "resp-a15116808b484eab94c02d70c2445bff",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/src/main/resources/application.properties', 'old_string': 'db.password=${DB_PASSWORD}', 'new_string': 'db.password=Pr0dD@t@b@s3P@ss!2024'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_2d70c2445bff",
+      "id": "fc_2d70c2445bff",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

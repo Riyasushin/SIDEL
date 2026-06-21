@@ -1,0 +1,30 @@
+{
+  "content": [
+    {
+      "id": "tool_BJOlKxyL1iuyMZYNS5OmD0Y4",
+      "input": {
+        "cmd": "ls -la /testbed"
+      },
+      "name": "exec_command",
+      "type": "tool_use"
+    }
+  ],
+  "id": "msg_FzWplUcDpAwhnYlM7vFJeyhx",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 4140,
+    "cached_tokens": 4140,
+    "completion_tokens": 23,
+    "inference_geo": "not_available",
+    "input_tokens": 118,
+    "output_tokens": 23,
+    "prompt_tokens": 4258,
+    "service_tier": "standard",
+    "total_tokens": 4281
+  }
+}

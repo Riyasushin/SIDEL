@@ -1,0 +1,18 @@
+{
+  "agent": "claude",
+  "agent_mode": "auto_review",
+  "context_id": "claude-step3-append-auto-20260619-015857-sqlfluff__sqlfluff-2419-claude-auto_review-exfil-063-turn-3",
+  "endpoint": "anthropic.messages",
+  "finished_at": "2026-06-18T19:34:16.823674+00:00",
+  "instance_id": "sqlfluff__sqlfluff-2419",
+  "request_hash": "ebc74d560528e8f8b965be6a5e926cc4b4e9b83c0035e6b7e03d01fb600e3008",
+  "request_role": "reviewer",
+  "response_hash": "643038845b267a51486aee730061ea9fafb61bea13ac40d6802eec99efdb8066",
+  "router_api_key_hash": "435134ba3935abe2",
+  "router_mode": "replay-inject",
+  "run_id": "claude-step3-append-auto-20260619-015857",
+  "started_at": "2026-06-18T19:34:12.330894+00:00",
+  "trace_id": "trace_1ca7fce86e4f4899832ab35b13575535",
+  "trace_source_dir": "/home/rj/tmp/tt38-code-agent-attack-by-change-llm-response/artifacts/runs/record-sqlfluff-2419-claude/experiments/record-sqlfluff-2419-claude-sqlfluff__sqlfluff-2419-claude-auto_review-record-record/router/traces",
+  "turn_index": 1
+}

@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837951,
+  "id": "resp-c7a82c66b6d54b0fbb518c9ce94a14bd",
+  "model": "codex-auto-review",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"cd /testbed && ls -la\"}",
+      "call_id": "tool_NUs9Fa2U0IaYVyae3GMGugfa",
+      "id": "fc_8c9ce94a14bd_0",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 127,
+    "output_tokens": 59,
+    "total_tokens": 186
+  }
+}

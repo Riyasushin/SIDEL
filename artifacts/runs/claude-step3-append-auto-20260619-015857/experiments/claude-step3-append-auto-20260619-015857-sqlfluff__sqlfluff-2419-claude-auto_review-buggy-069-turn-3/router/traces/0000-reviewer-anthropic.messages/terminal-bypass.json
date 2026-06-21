@@ -1,0 +1,14 @@
+{
+  "context_id": "claude-step3-append-auto-20260619-015857-sqlfluff__sqlfluff-2419-claude-auto_review-buggy-069-turn-3",
+  "current_turn_index": 0,
+  "reason": "injection_completed",
+  "status": "context_terminal_bypassed",
+  "terminal_event": "router.injection_completed",
+  "terminal_payload": {
+    "dataset_sample_id": "buggy-069",
+    "injection_turn": 3,
+    "protocol": "anthropic.messages",
+    "tool_name": "Write"
+  },
+  "terminal_turn_index": 3
+}

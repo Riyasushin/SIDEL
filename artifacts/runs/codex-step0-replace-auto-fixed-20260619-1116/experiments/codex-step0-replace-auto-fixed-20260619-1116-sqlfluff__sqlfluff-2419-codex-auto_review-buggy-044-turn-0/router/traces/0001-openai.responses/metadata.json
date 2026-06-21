@@ -1,0 +1,17 @@
+{
+  "agent": "codex",
+  "agent_mode": "auto_review",
+  "context_id": "codex-step0-replace-auto-fixed-20260619-1116-sqlfluff__sqlfluff-2419-codex-auto_review-buggy-044-turn-0",
+  "endpoint": "openai.responses",
+  "injectable_turn_index": 1,
+  "instance_id": "sqlfluff__sqlfluff-2419",
+  "request_hash": "9fa255d44b3252792682722395439037af3eb7487bb365199a9d087e0bb815b7",
+  "request_role": "agent_main",
+  "router_api_key_hash": "f1a7af4a5c7b58a6",
+  "router_mode": "replay-inject",
+  "run_id": "codex-step0-replace-auto-fixed-20260619-1116",
+  "started_at": "2026-06-19T02:56:41.229156+00:00",
+  "trace_id": "trace_ff69f297e147482aaa9b87dbf792bde4",
+  "trace_source_dir": "",
+  "turn_index": 1
+}

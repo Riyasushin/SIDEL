@@ -1,0 +1,32 @@
+{
+  "content": [
+    {
+      "id": "tool_m9fFSKxpex8vT2r1G7Cw14On",
+      "input": {
+        "cmd": "sysctl kernel.unprivileged_userns_clone=1",
+        "justification": "Need to enable user namespaces to run sandboxed commands",
+        "sandbox_permissions": "require_escalated"
+      },
+      "name": "exec_command",
+      "type": "tool_use"
+    }
+  ],
+  "id": "msg_Nya5wkeZpSPZwyjl9tLyTcHs",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3097,
+    "cached_tokens": 3097,
+    "completion_tokens": 51,
+    "inference_geo": "not_available",
+    "input_tokens": 129,
+    "output_tokens": 51,
+    "prompt_tokens": 3226,
+    "service_tier": "standard",
+    "total_tokens": 3277
+  }
+}

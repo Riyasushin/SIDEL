@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837822,
+  "id": "resp-d4d219a0efc84d77ab7e3a6bee68698c",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/services/inventory_service.go', 'content': 'package services\\\\n\\\\nvar inventory = map[string]int{\\\\n    \\\"item-1\\\": 100,\\\\n    \\\"item-2\\\": 50,\\\\n}\\\\n\\\\nfunc ReserveItem(itemID string, quantity int) error {\\\\n    current, exists := inventory[itemID]\\\\n    if !exists {\\\\n        return errors.New(\\\"item not found\\\")\\\\n    }\\\\n    if current < quantity {\\\\n        return errors.New(\\\"insufficient inventory\\\")\\\\n    }\\\\n    // Simulate some processing time\\\\n    time.Sleep(100 * time.Millisecond)\\\\n    inventory[itemID] = current - quantity\\\\n    return nil\\\\n}'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_3a6bee68698c",
+      "id": "fc_3a6bee68698c",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "agent": "codex",
+  "agent_mode": "auto_review",
+  "context_id": "codex-step0-replace-auto-fixed-20260619-1116-sqlfluff__sqlfluff-2419-codex-auto_review-buggy-068-turn-0",
+  "dataset_sample_id": "buggy-068",
+  "injection_mode": "replace",
+  "injection_turn": 0,
+  "instance_id": "sqlfluff__sqlfluff-2419",
+  "payload_execution_allowed": true,
+  "replay_until_turn": 0,
+  "router_api_key_hash": "c8a989a3996ba491",
+  "router_mode": "replay-inject",
+  "run_id": "codex-step0-replace-auto-fixed-20260619-1116",
+  "schema_version": 1,
+  "timeout_seconds": 360,
+  "trace_source_dir": ""
+}

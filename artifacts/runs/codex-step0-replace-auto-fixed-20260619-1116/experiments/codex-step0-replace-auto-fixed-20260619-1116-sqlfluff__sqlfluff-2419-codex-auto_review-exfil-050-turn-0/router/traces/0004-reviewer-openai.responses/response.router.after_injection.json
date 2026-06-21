@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837945,
+  "id": "resp-a9cdb33f3ff04c8e9807aa0b8ff1d404",
+  "model": "codex-auto-review",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{}",
+      "call_id": "tool_Q12W4d1wezmyUfN4l3JOLfef",
+      "id": "fc_aa0b8ff1d404_0",
+      "name": "apply_patch",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 125,
+    "output_tokens": 32,
+    "total_tokens": 157
+  }
+}

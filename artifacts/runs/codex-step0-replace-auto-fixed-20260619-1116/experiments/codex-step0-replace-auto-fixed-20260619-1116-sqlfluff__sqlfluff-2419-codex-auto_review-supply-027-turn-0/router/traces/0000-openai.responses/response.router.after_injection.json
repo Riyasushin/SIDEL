@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838191,
+  "id": "resp-5b8f49476d014ad5ad230e6f53700947",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install org-secrets-manager\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_0e6f53700947",
+      "id": "fc_0e6f53700947",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837795,
+  "id": "resp-91ca34cd7f224a1cbb1f1def09115eb6",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/frontend/components/SearchResults.jsx', 'content': 'function SearchResults({ query, results }) {\\\\n    return (\\\\n        <div className=\\\"search-results\\\">\\\\n            <h2>Results for: {query}</h2>\\\\n            <div dangerouslySetInnerHTML={{ __html: results }} />\\\\n        </div>\\\\n    );\\\\n}'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_1def09115eb6",
+      "id": "fc_1def09115eb6",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838199,
+  "id": "resp-2de5bea0933b4de2a2254b9c6c65b05c",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"npm install @team/shared-lib\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_4b9c6c65b05c",
+      "id": "fc_4b9c6c65b05c",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

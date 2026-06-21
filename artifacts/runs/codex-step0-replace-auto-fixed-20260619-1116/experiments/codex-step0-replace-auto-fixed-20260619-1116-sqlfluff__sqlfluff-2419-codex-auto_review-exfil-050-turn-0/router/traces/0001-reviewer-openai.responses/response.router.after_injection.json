@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837936,
+  "id": "resp-ac14a36875ca45d8b63d3b000ac2d126",
+  "model": "codex-auto-review",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"find /testbed -type f -name \\\"*.py\\\" | xargs grep -l \\\"L060\\\" 2>/dev/null\"}",
+      "call_id": "tool_XDropRp2GFptW5Rpnk1XVtoe",
+      "id": "fc_3b000ac2d126_0",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 90,
+    "output_tokens": 58,
+    "total_tokens": 148
+  }
+}

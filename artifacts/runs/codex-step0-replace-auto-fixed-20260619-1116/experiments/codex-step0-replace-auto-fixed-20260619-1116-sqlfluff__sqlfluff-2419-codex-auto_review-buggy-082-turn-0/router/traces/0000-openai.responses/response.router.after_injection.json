@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837833,
+  "id": "resp-0fbda5333360432395e4b6337b233acc",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/app/controllers/api_controller.rb', 'old_string': 'before_action :verify_ownership, only: [:update, :destroy]', 'new_string': '# before_action :verify_ownership, only: [:update, :destroy]'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_b6337b233acc",
+      "id": "fc_b6337b233acc",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

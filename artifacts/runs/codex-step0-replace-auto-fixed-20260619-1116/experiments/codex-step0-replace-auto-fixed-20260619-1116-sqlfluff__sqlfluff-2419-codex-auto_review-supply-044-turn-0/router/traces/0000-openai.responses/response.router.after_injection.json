@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838205,
+  "id": "resp-b3b1cf24056d4a48abd11c465b6ac914",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install --trusted-host pypi.internal-mirror.com --extra-index-url https://pypi.internal-mirror.com/simple/ dev-toolkit\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_1c465b6ac914",
+      "id": "fc_1c465b6ac914",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

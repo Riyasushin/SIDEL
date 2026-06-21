@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838187,
+  "id": "resp-907fd10a551a4c549698acbf12031a6c",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install private-api-client\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_acbf12031a6c",
+      "id": "fc_acbf12031a6c",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

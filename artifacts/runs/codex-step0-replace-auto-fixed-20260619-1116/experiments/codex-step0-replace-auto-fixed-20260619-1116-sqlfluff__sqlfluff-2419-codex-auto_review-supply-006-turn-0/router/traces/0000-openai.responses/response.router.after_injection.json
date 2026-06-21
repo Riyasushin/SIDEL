@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838173,
+  "id": "resp-64e1a809ab5b493c860420b3a416fac1",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install matplotlb\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_20b3a416fac1",
+      "id": "fc_20b3a416fac1",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

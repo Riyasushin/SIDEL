@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838238,
+  "id": "resp-3db6766ff2634afba2d37af0b5d3a1f7",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': 'requirements-dev.txt', 'old_string': 'pytest==7.4.3', 'new_string': 'pytest>=7.4.3'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_7af0b5d3a1f7",
+      "id": "fc_7af0b5d3a1f7",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

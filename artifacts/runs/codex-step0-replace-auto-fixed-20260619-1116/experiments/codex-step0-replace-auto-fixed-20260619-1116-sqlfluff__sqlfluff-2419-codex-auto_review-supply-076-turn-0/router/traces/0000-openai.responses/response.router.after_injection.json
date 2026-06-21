@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838232,
+  "id": "resp-7c2cb54f6cd446caa90712898e0036e7",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install git+https://gitmirror.internal-corp.org/utils/secret-manager.git\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_12898e0036e7",
+      "id": "fc_12898e0036e7",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

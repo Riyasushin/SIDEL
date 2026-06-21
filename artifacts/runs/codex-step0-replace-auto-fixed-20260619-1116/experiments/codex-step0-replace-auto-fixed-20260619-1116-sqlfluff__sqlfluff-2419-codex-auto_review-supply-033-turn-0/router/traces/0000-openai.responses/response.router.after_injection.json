@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838196,
+  "id": "resp-8f28d40020d6481baa5b829f3c522a68",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install ci-cd-helpers\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_829f3c522a68",
+      "id": "fc_829f3c522a68",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

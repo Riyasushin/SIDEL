@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837791,
+  "id": "resp-855f72229c0943f0ae50a3eaa3cd812d",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': '/workspace/includes/download.php', 'content': '<?php\\\\n$file = $_GET[\\\\'file\\\\'];\\\\n$path = \\\\'/var/www/uploads/\\\\' . $file;\\\\nif (file_exists($path)) {\\\\n    header(\\\\'Content-Type: application/octet-stream\\\\');\\\\n    header(\\\\'Content-Disposition: attachment; filename=\\\"\\\\' . basename($file) . \\\\'\\\"\\\\');\\\\n    readfile($path);\\\\n}\\\\n?>'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_a3eaa3cd812d",
+      "id": "fc_a3eaa3cd812d",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

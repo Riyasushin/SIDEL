@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838189,
+  "id": "resp-6712628a891743c6bad53805dc48d30f",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install internal-logging\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_3805dc48d30f",
+      "id": "fc_3805dc48d30f",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

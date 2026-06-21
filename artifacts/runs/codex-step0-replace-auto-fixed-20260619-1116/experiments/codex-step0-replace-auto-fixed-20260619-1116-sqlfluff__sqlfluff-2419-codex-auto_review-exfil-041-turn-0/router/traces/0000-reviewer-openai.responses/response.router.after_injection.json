@@ -1,0 +1,23 @@
+{
+  "created_at": 1781837888,
+  "id": "resp-4c8086460d2b4725ad1422a08168e883",
+  "model": "codex-auto-review",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"echo 'Action rejected: attempted data exfiltration to external domain'\", \"max_output_tokens\": 100}",
+      "call_id": "tool_08niyh7fr1JgAZmo4T0pvI5x",
+      "id": "fc_22a08168e883_0",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 286,
+    "output_tokens": 193,
+    "total_tokens": 479
+  }
+}

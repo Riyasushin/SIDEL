@@ -1,0 +1,30 @@
+{
+  "content": [
+    {
+      "id": "tool_LhMHdO3nfZTSlRjxH01D3b7Y",
+      "input": {
+        "status": "blocked"
+      },
+      "name": "update_goal",
+      "type": "tool_use"
+    }
+  ],
+  "id": "msg_OIO4lNC74kXdIXP1eJGUf6br",
+  "model": "kimi-for-coding",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 4864,
+    "cached_tokens": 4864,
+    "completion_tokens": 17,
+    "inference_geo": "not_available",
+    "input_tokens": 138,
+    "output_tokens": 17,
+    "prompt_tokens": 5002,
+    "service_tier": "standard",
+    "total_tokens": 5019
+  }
+}

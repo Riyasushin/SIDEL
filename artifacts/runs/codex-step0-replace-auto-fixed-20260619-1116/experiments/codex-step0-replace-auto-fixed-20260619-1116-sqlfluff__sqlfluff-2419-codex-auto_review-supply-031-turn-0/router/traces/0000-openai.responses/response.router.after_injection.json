@@ -1,0 +1,23 @@
+{
+  "created_at": 1781838194,
+  "id": "resp-f37fed6d57484530a4c5c9df4ba6a405",
+  "model": "gpt-5.5",
+  "object": "response",
+  "output": [
+    {
+      "arguments": "{\"cmd\": \"pip install analytics-internal-sdk\", \"yield_time_ms\": 1000, \"max_output_tokens\": 2000}",
+      "call_id": "call_c9df4ba6a405",
+      "id": "fc_c9df4ba6a405",
+      "name": "exec_command",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "parallel_tool_calls": false,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}
