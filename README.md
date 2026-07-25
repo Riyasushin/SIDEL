@@ -355,7 +355,7 @@ Until a proceedings identifier is available, cite the manuscript as:
 ```bibtex
 @misc{fu2026sidel,
   title  = {Where Is the Cost of Third-Party API Routers in Agentic Software Development?},
-  author = {Fu, Donghao and Li, Jingxin and Jiang, Xue and Dong, Yihong},
+  author = {Donghao Fu and Jingxin Li and Xue Jiang and Yihong Dong},
   year   = {2026},
   note   = {Manuscript}
 }
