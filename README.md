@@ -16,7 +16,7 @@ Third-party LLM routers terminate a coding agent's connection, forward the reque
 
 SIDEL 是一个面向代码智能体供应链安全的实验框架，用来研究第三方 LLM Router 在响应链路中篡改 tool-call 后，智能体是否会执行非上游模型原意的仓库级操作。系统由实验管理器、共享 Router 和隔离的 SWE-bench 任务容器组成，支持 clean trace 记录、严格或 task-turn-compatible 回放、指定轮次注入、L1–L4 干预、客户端工具防御以及审核/执行结果分析。
 
-仓库发布版自动化支持 **Codex** 和 **Claude Code**。论文实验还评估了 Cursor 和 OpenCode；README 会区分论文报告范围与当前公开 adapter 的实现范围。
+论文中的 SIDEL 原型实现并评估了四种代码智能体：**Codex、Claude Code、Cursor 和 OpenCode**。
 
 ## Research Questions
 
@@ -59,7 +59,7 @@ router/
           |
 swebench_container/
   isolated official SWE-bench task image
-  Codex or Claude Code executes against a live repository
+  evaluated coding agents execute against a live repository
 ```
 
 The API key is both an authentication credential and the context-routing key. Every task container receives a unique key that resolves to an `ExperimentContext`. Turn counters, terminal state, request serialization, replay matching, and trace artifacts are scoped to that context.
@@ -332,7 +332,7 @@ The test suite covers context routing, replay compatibility, all supported proto
 |---|---|
 | `manager/` | Experiment planning, manifests, orchestration, and analysis |
 | `router/` | FastAPI proxy, protocol conversion, replay, intervention, defense, tracing |
-| `swebench_container/` | Codex/Claude adapters and isolated Docker execution |
+| `swebench_container/` | Coding-agent adapters and isolated Docker execution |
 | `data/` | Curated 400-record intervention dataset |
 | `bench/` | SWE-bench Lite task snapshot and prompt template |
 | `scripts/` | Matrix runners, reviewer reruns, L4 ablation, reporting utilities |
