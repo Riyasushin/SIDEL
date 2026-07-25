@@ -9,14 +9,10 @@ SIDEL accompanies the manuscript:
 
 Third-party LLM routers terminate a coding agent's connection, forward the request to an upstream model, and return a response to the agent. This position gives the router plaintext access to prompts, repository context, tool definitions, and action-bearing model output. SIDEL makes this trust boundary measurable: it records a clean provider trace, replays it deterministically, intervenes in selected responses, and observes the repository-level actions executed by the agent.
 
+The SIDEL prototype implements integrations for and evaluates four coding agents: **Codex, Claude Code, Cursor, and OpenCode**.
+
 > [!CAUTION]
 > This repository contains a controlled dataset of malicious tool-call samples. Run experiments only in isolated disposable containers, never mount host secrets or the Docker socket into task containers, and enable raw payload execution only when the experiment manifest explicitly records that authorization.
-
-## 中文概览
-
-SIDEL 是一个面向代码智能体供应链安全的实验框架，用来研究第三方 LLM Router 在响应链路中篡改 tool-call 后，智能体是否会执行非上游模型原意的仓库级操作。系统由实验管理器、共享 Router 和隔离的 SWE-bench 任务容器组成，支持 clean trace 记录、严格或 task-turn-compatible 回放、指定轮次注入、L1–L4 干预、客户端工具防御以及审核/执行结果分析。
-
-论文中的 SIDEL 原型实现并评估了四种代码智能体：**Codex、Claude Code、Cursor 和 OpenCode**。
 
 ## Research Questions
 
