@@ -26,7 +26,7 @@
 artifacts/runs/<run_id>/
   router/
     effective_config.json
-    router.log
+    uvicorn.log
   experiments/<context_id>/
     manifest.json
     router/traces/<turn>-<endpoint>/
@@ -38,6 +38,7 @@ artifacts/runs/<run_id>/
       response.router.after_injection.json
       replay.json
       injection.json
+      defense_scan.json
     container/
       stdout.log
       stderr.log
@@ -55,10 +56,13 @@ artifacts/runs/<run_id>/
 
 Replay 仍然从 task 开始真实运行 agent。router 只是把 LLM response 换成历史记录；它不会伪造 Codex/Claude session 文件，也不会跳过前置 tool execution。
 
-严格 replay 必须匹配：
+正式实验可选择两种 replay 口径：
 
 ```text
-context_id + turn_index + endpoint + request_hash
+exact_request_hash
+task_turn_compatible
 ```
 
-hash 不匹配时，该 context 应记录为 `trace_mismatch`，不能用于正式结论。
+`exact_request_hash` 要求 endpoint 和稳定 request hash 一致。`task_turn_compatible`
+忽略 title/reviewer 等辅助请求漂移，按主任务 turn 对齐，但仍会校验录制 response
+引用的 tool 是否存在于当前请求。两种模式都会把匹配或失败原因写入 replay outcome。

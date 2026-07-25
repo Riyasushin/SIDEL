@@ -1,5 +1,6 @@
 .git
 .venv
+artifacts
 __pycache__
 .pytest_cache
 .mypy_cache
@@ -7,3 +8,5 @@ __pycache__
 node_modules
 .env
 *.pyc
+.DS_Store
+**/.DS_Store

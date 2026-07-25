@@ -23,6 +23,7 @@ class ContainerRunSpec:
     wrapper_image: str
     issue_prompt: str
     timeout_seconds: int = 1800
+    platform: str = "linux/amd64"
     network: str = "bridge"
     environment: dict[str, str] = field(default_factory=dict)
     docker_inspect_path: Path | None = None

@@ -7,6 +7,8 @@ from fastapi import HTTPException
 
 from router.context import ExperimentContext
 from router.session_state import mark_injection_completed, mark_replay_completed, terminal_state_for
+from router.timeout_utils import clamp_tool_timeout_fields
+from router.tool_defense import apply_tool_defense
 from router.tracing import extract_trace_metadata, stable_hash, write_trace_event, write_turn_artifact
 
 REPLAY_TURN_ENDPOINTS = frozenset({"openai.chat", "openai.responses", "anthropic.messages"})
@@ -84,11 +86,29 @@ def finish_replay_turn(
     before_injection: dict[str, Any] | None = None,
     injection: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    defense_scan: dict[str, Any] | None = None
+    response = clamp_tool_timeout_fields(response)
+    if before_injection is not None:
+        before_injection = clamp_tool_timeout_fields(before_injection)
+    if context.enable_tool_defense:
+        response, defense_scan = apply_tool_defense(str(metadata.get("endpoint") or ""), response)
     finished_at = datetime.now(timezone.utc).isoformat()
     metadata.update({"finished_at": finished_at, "response_hash": stable_hash(response)})
     if before_injection is not None:
         write_turn_artifact(context, metadata, "response.router.before_injection.json", before_injection)
     write_turn_artifact(context, metadata, "response.router.after_injection.json", response)
+    if defense_scan is not None:
+        write_turn_artifact(context, metadata, "defense_scan.json", defense_scan)
+        write_trace_event(
+            context,
+            metadata,
+            "router.tool_defense",
+            {
+                "scanned": defense_scan["scanned"],
+                "allowed": defense_scan["allowed"],
+                "denied": defense_scan["denied"],
+            },
+        )
     if injection is not None:
         write_turn_artifact(context, metadata, "injection.json", injection)
         mark_injection_completed(context, metadata, injection)

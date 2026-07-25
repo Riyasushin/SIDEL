@@ -13,6 +13,8 @@ from manager.manifest import (
     AgentName,
     ExperimentManifest,
     InjectionMode,
+    InjectionTurnMode,
+    ReplayMatchMode,
     RouterMode,
     api_key_hash,
     generate_router_api_key,
@@ -33,6 +35,12 @@ class MatrixPlanOptions:
     payload_execution_allowed: bool
     timeout_seconds: int
     trace_source_root: Path | None = None
+    replay_match_mode: ReplayMatchMode = "exact_request_hash"
+    enable_tool_defense: bool = False
+    dynamic_l3_enabled: bool = False
+    dynamic_l4_enabled: bool = False
+    injection_turn_mode: InjectionTurnMode = "fixed"
+    injection_random_seed: int | None = None
 
 
 def load_task_instance_ids(tasks_path: Path, limit: int = 0, selected: Iterable[str] = ()) -> tuple[str, ...]:
@@ -97,7 +105,7 @@ def build_matrix_plan(options: MatrixPlanOptions) -> dict[str, ExperimentManifes
                         router_mode=options.router_mode,
                         trace_source_dir=trace_source_dir(options, instance_id, agent),
                         replay_until_turn=turn if options.router_mode in {"replay", "replay-inject"} else None,
-                        injection_turn=turn if options.router_mode == "replay-inject" else None,
+                        injection_turn=resolved_injection_turn(options, turn),
                         dataset_sample_id=dataset_sample_id(options, sample_id),
                         injection_mode=options.injection_mode,
                         payload_execution_allowed=options.payload_execution_allowed,
@@ -105,12 +113,21 @@ def build_matrix_plan(options: MatrixPlanOptions) -> dict[str, ExperimentManifes
                         swebench_image=default_swebench_image(instance_id),
                         wrapper_image=default_wrapper_image(options.run_id, instance_id, agent),
                         router_api_key_hash=api_key_hash(api_key),
+                        injection_turn_mode=options.injection_turn_mode,
+                        injection_turns=configured_injection_turns(options),
+                        injection_random_seed=options.injection_random_seed,
+                        replay_match_mode=options.replay_match_mode,
+                        enable_tool_defense=options.enable_tool_defense,
+                        dynamic_l3_enabled=options.dynamic_l3_enabled,
+                        dynamic_l4_enabled=options.dynamic_l4_enabled,
                     )
     return keyed
 
 
 def effective_turns(options: MatrixPlanOptions) -> tuple[int | None, ...]:
     if options.router_mode == "proxy-record":
+        return (None,)
+    if options.injection_turn_mode == "random":
         return (None,)
     return options.injection_turns or (None,)
 
@@ -141,9 +158,9 @@ def parse_turns(value: str, router_mode: RouterMode) -> tuple[int | None, ...]:
         return (None,)
     turns: list[int | None] = []
     for item in (part.strip() for part in value.split(",") if part.strip()):
-        turns.append(int(item))
+        turns.extend(expand_turn_selector(item))
     if not turns:
-        raise ValueError("replay and replay-inject require at least one turn")
+        raise ValueError("replay, replay-inject, and inject require at least one turn")
     return tuple(turns)
 
 
@@ -171,6 +188,29 @@ def expand_selector(selector: str, row_count: int) -> list[str]:
     return [str(index) for index in range(start, end + 1)]
 
 
+def expand_turn_selector(selector: str) -> list[int]:
+    if ":" not in selector:
+        return [int(selector)]
+    start_s, end_s = selector.split(":", 1)
+    start = int(start_s)
+    end = int(end_s)
+    if start < 0 or end < start:
+        raise ValueError(f"invalid injection turn range: {selector}")
+    return list(range(start, end + 1))
+
+
+def resolved_injection_turn(options: MatrixPlanOptions, turn: int | None) -> int | None:
+    if options.router_mode not in {"replay-inject", "inject"}:
+        return None
+    if options.injection_turn_mode == "random":
+        return None
+    return turn
+
+
+def configured_injection_turns(options: MatrixPlanOptions) -> tuple[int, ...]:
+    return tuple(int(turn) for turn in options.injection_turns if turn is not None)
+
+
 def trace_source_dir(options: MatrixPlanOptions, instance_id: str, agent: AgentName) -> str:
     if options.trace_source_root is None:
         return ""
@@ -178,7 +218,15 @@ def trace_source_dir(options: MatrixPlanOptions, instance_id: str, agent: AgentN
 
 
 def context_id_for(options: MatrixPlanOptions, agent: AgentName, instance_id: str, sample_id: str, turn: int | None) -> str:
-    turn_part = "record" if turn is None else f"turn-{turn}"
+    if turn is None:
+        if options.router_mode == "proxy-record":
+            turn_part = "record"
+        elif options.injection_turn_mode == "random":
+            turn_part = "turn-random"
+        else:
+            turn_part = "turn-none"
+    else:
+        turn_part = f"turn-{turn}"
     return "-".join(
         [
             safe_token(options.run_id),

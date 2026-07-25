@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 import json
 from pathlib import Path
 
@@ -28,24 +29,53 @@ class ExperimentExecutor:
         self.agent_tool_image = agent_tool_image
         self.force_image_rebuild = force_image_rebuild
 
-    def run_all(self, *, dry_run: bool = False, build_images: bool = False) -> list[ContextResult]:
-        results: list[ContextResult] = []
-        for spec in self.orchestrator.build_container_specs():
-            result = self.run_one(spec, dry_run=dry_run, build_images=build_images)
-            results.append(result)
-        return results
+    def run_all(self, *, dry_run: bool = False, build_images: bool = False, workers: int = 4) -> list[ContextResult]:
+        if workers <= 0:
+            raise ValueError("workers must be > 0")
+        specs = self.orchestrator.build_container_specs()
+        results: list[ContextResult | None] = [None] * len(specs)
+        runnable: list[tuple[int, ContainerRunSpec]] = []
+        blocked_by_image = self.prepare_images(specs) if build_images else {}
+        for index, spec in enumerate(specs):
+            if spec.context_id in blocked_by_image:
+                results[index] = blocked_by_image[spec.context_id]
+            else:
+                runnable.append((index, spec))
+        if workers == 1 or len(runnable) <= 1:
+            for index, spec in runnable:
+                results[index] = self.run_one(spec, dry_run=dry_run, build_images=False)
+            return [result for result in results if result is not None]
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures: dict[Future[ContextResult], int] = {}
+            for index, spec in runnable:
+                futures[pool.submit(self.run_one, spec, dry_run=dry_run, build_images=False)] = index
+            for future in as_completed(futures):
+                results[futures[future]] = future.result()
+        return [result for result in results if result is not None]
 
     def run_one(self, spec: ContainerRunSpec, *, dry_run: bool, build_images: bool) -> ContextResult:
         if build_images:
             # 中文注释：镜像构建是独立验证项；dry-run 也允许只检查 wrapper image 能否生成。
             image_result = self.build_wrapper_image(spec)
             if image_result.exit_code != 0:
-                result = ContextResult(spec.context_id, "image_build_failed", "review_unknown", "execution_unknown", "wrapper image build failed")
+                result = ContextResult(
+                    context_id=spec.context_id,
+                    status="image_build_failed",
+                    review_outcome="review_unknown",
+                    execution_outcome="execution_unknown",
+                    reason="wrapper image build failed",
+                )
                 write_context_result(spec, result)
                 return result
         if dry_run:
             write_dry_run(spec, self.runner.build_docker_command(spec))
-            result = ContextResult(spec.context_id, "completed", "review_unknown", "execution_unknown", "dry_run")
+            result = ContextResult(
+                context_id=spec.context_id,
+                status="completed",
+                review_outcome="review_unknown",
+                execution_outcome="execution_unknown",
+                reason="dry_run",
+            )
         else:
             container_result = self.runner.run(spec)
             result = context_result_from_container(container_result)
@@ -60,9 +90,32 @@ class ExperimentExecutor:
             agent=spec.agent,
             base_image=spec.swebench_image,
             agent_tool_image=self.agent_tool_image,
+            wrapper_image=spec.wrapper_image,
+            platform=spec.platform,
             force_rebuild=self.force_image_rebuild,
         )
         return self.image_builder.ensure_image(image_spec, artifact_dir=spec.artifact_dir.parent / "image")
+
+    def prepare_images(self, specs: list[ContainerRunSpec]) -> dict[str, ContextResult]:
+        blocked: dict[str, ContextResult] = {}
+        specs_by_wrapper: dict[str, list[ContainerRunSpec]] = {}
+        for spec in specs:
+            specs_by_wrapper.setdefault(spec.wrapper_image, []).append(spec)
+        for group in specs_by_wrapper.values():
+            image_result = self.build_wrapper_image(group[0])
+            if image_result.exit_code == 0:
+                continue
+            for spec in group:
+                result = ContextResult(
+                    context_id=spec.context_id,
+                    status="image_build_failed",
+                    review_outcome="review_unknown",
+                    execution_outcome="execution_unknown",
+                    reason="wrapper image build failed",
+                )
+                write_context_result(spec, result)
+                blocked[spec.context_id] = result
+        return blocked
 
 
 def context_result_from_container(result: ContainerRunResult) -> ContextResult:

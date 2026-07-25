@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import shlex
 import subprocess
@@ -24,6 +25,8 @@ class DockerTaskRunner:
             "run",
             "--name",
             container_name,
+            "--platform",
+            spec.platform,
             "--network",
             spec.network,
             "--workdir",
@@ -188,7 +191,9 @@ def serializable_spec(spec: ContainerRunSpec) -> dict[str, object]:
 
 
 def container_name_for(spec: ContainerRunSpec) -> str:
-    return f"swebench-{safe_token(spec.run_id)}-{safe_token(spec.context_id)[:80]}"
+    context_token = safe_token(spec.context_id)
+    suffix = hashlib.sha256(spec.context_id.encode("utf-8")).hexdigest()[:12]
+    return f"swebench-{safe_token(spec.run_id)}-{context_token[:67]}-{suffix}"
 
 
 def safe_token(value: str) -> str:

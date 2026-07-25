@@ -117,6 +117,30 @@ def next_task_turn_index(context: ExperimentContext, endpoint: str, body: dict[s
         return turn
 
 
+def rollback_task_turn_index(context: ExperimentContext, metadata: dict[str, Any]) -> None:
+    """Keep a failed upstream attempt from consuming the injection turn.
+
+    Context requests are serialized by ``request_gate``, so a failed task turn
+    is always the most recently allocated one and can safely be retried with
+    the same task-turn index.
+    """
+
+    if metadata.get("request_role") != "agent_main":
+        return
+    task_turn = metadata.get("task_turn_index")
+    if task_turn is None:
+        return
+    key = f"{context.run_id}:{context.context_id}:agent_main"
+    expected_next = int(task_turn) + 1
+    with _TURN_LOCK:
+        current_next = _TASK_TURN_COUNTERS.get(key)
+        if current_next != expected_next:
+            raise RuntimeError(
+                f"cannot roll back task turn for {context.context_id}: expected next={expected_next}, got {current_next}"
+            )
+        _TASK_TURN_COUNTERS[key] = int(task_turn)
+
+
 def is_injectable_request(endpoint: str, body: dict[str, Any], request_role: str) -> bool:
     if request_role != "agent_main":
         return False

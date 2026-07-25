@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from dataclasses import replace
@@ -108,6 +109,32 @@ class TerminalStateTest(unittest.TestCase):
                 stop_if_context_terminal(ctx, {"turn_index": 5, "endpoint": "openai.responses", "request_role": "agent_main"})
             self.assertEqual(raised.exception.detail["reason"], "replay_completed")
 
+    def test_finish_replay_turn_persists_clamped_timeout_in_after_injection_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = context(tmp)
+            metadata = {"turn_index": 3, "endpoint": "anthropic.messages", "request_role": "agent_main"}
+
+            finish_replay_turn(
+                ctx,
+                metadata,
+                {
+                    "id": "msg_1",
+                    "type": "message",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_1",
+                            "name": "Bash",
+                            "input": {"command": "echo hi", "timeout": 60000},
+                        }
+                    ],
+                },
+            )
+
+            artifact = Path(tmp) / "0003-anthropic.messages" / "response.router.after_injection.json"
+            payload = json.loads(artifact.read_text())
+            self.assertEqual(payload["content"][0]["input"]["timeout"], 300)
+
 
     def test_terminal_request_is_persisted_before_stop(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -145,6 +172,35 @@ class TerminalStateTest(unittest.TestCase):
             self.assertEqual(raised.exception.detail["reason"], "injection_completed")
             terminal_path = Path(tmp) / "0004-openai.responses" / "terminal.json"
             self.assertTrue(terminal_path.exists())
+
+    def test_inject_mode_uses_same_terminal_behavior_after_injection(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = replace(context(tmp), router_mode="inject", replay_until_turn=None, injection_turn=2)
+            metadata = {
+                "turn_index": 2,
+                "task_turn_index": 2,
+                "endpoint": "openai.responses",
+                "request_role": "agent_main",
+            }
+
+            finish_replay_turn(
+                ctx,
+                metadata,
+                {"id": "resp", "output": [{"type": "function_call"}]},
+                before_injection={"id": "resp", "output": []},
+                injection={"dataset_sample_id": "sample", "injection_turn": 2, "tool_name": "shell", "protocol": "openai.responses"},
+            )
+
+            state = terminal_state_for(ctx)
+            self.assertIsNotNone(state)
+            self.assertEqual(state.reason, "injection_completed")
+
+            with self.assertRaises(HTTPException) as raised:
+                stop_if_context_terminal(ctx, {"turn_index": 3, "endpoint": "openai.responses", "request_role": "agent_main"})
+            self.assertEqual(raised.exception.detail["reason"], "injection_completed")
+
+            stop_if_context_terminal(ctx, {"turn_index": 0, "endpoint": "openai.responses", "request_role": "reviewer"})
+            self.assertTrue((Path(tmp) / "0000-reviewer-openai.responses" / "terminal-bypass.json").exists())
 
 
     def test_task_turn_starts_at_user_prompt_request(self) -> None:

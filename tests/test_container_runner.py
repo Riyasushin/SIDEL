@@ -6,7 +6,7 @@ from pathlib import Path
 
 from manager.executor import context_result_from_container
 from swebench_container.models import ContainerRunResult, ContainerRunSpec
-from swebench_container.runner import DockerTaskRunner, redact_command, serializable_spec, terminal_artifact_exists, wrapped_agent_script
+from swebench_container.runner import DockerTaskRunner, container_name_for, redact_command, serializable_spec, terminal_artifact_exists, wrapped_agent_script
 
 
 class ContainerRunnerTest(unittest.TestCase):
@@ -116,6 +116,43 @@ class ContainerRunnerTest(unittest.TestCase):
         )
 
         self.assertEqual(result.status, "payload_blocked")
+
+    def test_container_name_is_stable_and_unique_for_long_shared_prefixes(self) -> None:
+        shared = "claude-allowall-inject-random10-replace-defense-sqlfluff1625-all400-par4-timeout600-20260627-004457-sqlfluff__sqlfluff-1625-claude-allow_all-"
+        spec_a = ContainerRunSpec(
+            run_id="run",
+            context_id=shared + "buggy-003-turn-random",
+            instance_id="task",
+            agent="claude",
+            agent_mode="allow_all",
+            router_url="http://router:8000",
+            router_api_key="rk_secret",
+            artifact_dir=Path("/tmp/artifacts-a"),
+            swebench_image="image",
+            wrapper_image="wrapper",
+            issue_prompt="fix bug",
+        )
+        spec_b = ContainerRunSpec(
+            run_id="run",
+            context_id=shared + "buggy-004-turn-random",
+            instance_id="task",
+            agent="claude",
+            agent_mode="allow_all",
+            router_url="http://router:8000",
+            router_api_key="rk_secret",
+            artifact_dir=Path("/tmp/artifacts-b"),
+            swebench_image="image",
+            wrapper_image="wrapper",
+            issue_prompt="fix bug",
+        )
+
+        name_a = container_name_for(spec_a)
+        name_b = container_name_for(spec_b)
+
+        self.assertNotEqual(name_a, name_b)
+        self.assertEqual(name_a, container_name_for(spec_a))
+        self.assertTrue(name_a.startswith("swebench-run-"))
+        self.assertTrue(name_b.startswith("swebench-run-"))
 
 
 if __name__ == "__main__":

@@ -15,11 +15,12 @@ from typing import Any, Literal
 from fastapi import Header, HTTPException
 
 from code_agents import AgentName, normalize_agent_name
-from router.config import Settings
+from router.config import ReplayMatchMode, Settings
 
 
-RouterMode = Literal["proxy-record", "replay", "replay-inject"]
+RouterMode = Literal["proxy-record", "replay", "replay-inject", "inject"]
 InjectionMode = Literal["append", "replace"]
+InjectionTurnMode = Literal["fixed", "random"]
 AgentMode = Literal["allow_all", "auto_review", "unknown"]
 
 
@@ -42,6 +43,13 @@ class ExperimentContext:
     timeout_seconds: int
     replay_strict: bool
     replay_response_file: str
+    injection_turn_mode: InjectionTurnMode = "fixed"
+    injection_turns: tuple[int, ...] = ()
+    injection_random_seed: int | None = None
+    replay_match_mode: ReplayMatchMode = "exact_request_hash"
+    enable_tool_defense: bool = False
+    dynamic_l3_enabled: bool = False
+    dynamic_l4_enabled: bool = False
 
     @property
     def api_key_hash(self) -> str:
@@ -58,10 +66,17 @@ class ExperimentContext:
             "trace_source_dir": self.trace_source_dir,
             "replay_until_turn": self.replay_until_turn,
             "injection_turn": self.injection_turn,
+            "injection_turn_mode": self.injection_turn_mode,
+            "injection_turns": self.injection_turns,
+            "injection_random_seed": self.injection_random_seed,
             "dataset_sample_id": self.dataset_sample_id,
             "injection_mode": self.injection_mode,
             "payload_execution_allowed": self.payload_execution_allowed,
             "timeout_seconds": self.timeout_seconds,
+            "replay_match_mode": self.replay_match_mode,
+            "enable_tool_defense": self.enable_tool_defense,
+            "dynamic_l3_enabled": self.dynamic_l3_enabled,
+            "dynamic_l4_enabled": self.dynamic_l4_enabled,
             "router_api_key_hash": self.api_key_hash,
             "schema_version": 1,
         }
@@ -131,6 +146,13 @@ def contexts_from_payload(payload: dict[str, Any], settings: Settings) -> list[E
                 timeout_seconds=int(raw_context.get("timeout_seconds") or settings.context_timeout_seconds),
                 replay_strict=bool(raw_context.get("replay_strict", settings.router_replay_strict)),
                 replay_response_file=str(raw_context.get("replay_response_file") or settings.router_replay_response_file),
+                injection_turn_mode=normalize_injection_turn_mode(str(raw_context.get("injection_turn_mode") or "fixed")),
+                injection_turns=optional_int_tuple(raw_context.get("injection_turns")),
+                injection_random_seed=optional_int(raw_context.get("injection_random_seed")),
+                replay_match_mode=normalize_replay_match_mode(str(raw_context.get("replay_match_mode") or settings.router_replay_match_mode)),
+                enable_tool_defense=bool(raw_context.get("enable_tool_defense", False)),
+                dynamic_l3_enabled=bool(raw_context.get("dynamic_l3_enabled", settings.attack_dynamic_l3_enabled)),
+                dynamic_l4_enabled=bool(raw_context.get("dynamic_l4_enabled", settings.attack_dynamic_l4_enabled)),
             )
         )
     return contexts
@@ -158,6 +180,13 @@ def single_context_from_settings(settings: Settings) -> ExperimentContext:
         timeout_seconds=settings.context_timeout_seconds,
         replay_strict=settings.router_replay_strict,
         replay_response_file=settings.router_replay_response_file,
+        injection_turn_mode="fixed",
+        injection_turns=(settings.attack_injection_turn,),
+        injection_random_seed=None,
+        replay_match_mode=normalize_replay_match_mode(settings.router_replay_match_mode),
+        enable_tool_defense=False,
+        dynamic_l3_enabled=settings.attack_dynamic_l3_enabled,
+        dynamic_l4_enabled=settings.attack_dynamic_l4_enabled,
     )
 
 
@@ -169,7 +198,7 @@ def default_context_trace_dir(settings: Settings, run_id: str, context_id: str) 
 def normalize_router_mode(value: str) -> RouterMode:
     aliases = {"proxy": "proxy-record"}
     normalized = aliases.get(value, value)
-    if normalized not in {"proxy-record", "replay", "replay-inject"}:
+    if normalized not in {"proxy-record", "replay", "replay-inject", "inject"}:
         raise ValueError(f"unsupported router mode for shared router: {value}")
     return normalized  # type: ignore[return-value]
 
@@ -177,6 +206,18 @@ def normalize_router_mode(value: str) -> RouterMode:
 def normalize_injection_mode(value: str) -> InjectionMode:
     if value not in {"append", "replace"}:
         raise ValueError(f"unsupported injection mode: {value}")
+    return value  # type: ignore[return-value]
+
+
+def normalize_injection_turn_mode(value: str) -> InjectionTurnMode:
+    if value not in {"fixed", "random"}:
+        raise ValueError(f"unsupported injection turn mode: {value}")
+    return value  # type: ignore[return-value]
+
+
+def normalize_replay_match_mode(value: str) -> ReplayMatchMode:
+    if value not in {"exact_request_hash", "task_turn_compatible"}:
+        raise ValueError(f"unsupported replay match mode: {value}")
     return value  # type: ignore[return-value]
 
 
@@ -190,6 +231,14 @@ def optional_int(value: Any) -> int | None:
     if value is None or value == "":
         return None
     return int(value)
+
+
+def optional_int_tuple(value: Any) -> tuple[int, ...]:
+    if value is None or value == "":
+        return ()
+    if not isinstance(value, (list, tuple)):
+        raise ValueError("injection_turns must be a list or tuple")
+    return tuple(int(item) for item in value)
 
 
 def extract_api_key(

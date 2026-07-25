@@ -15,12 +15,15 @@ class WrapperImageSpec:
     agent_tool_image: str
     build_context: Path
     dockerfile_path: Path
+    platform: str = "linux/amd64"
     force_rebuild: bool = False
 
     def build_command(self) -> list[str]:
         return [
             "docker",
             "build",
+            "--platform",
+            self.platform,
             "--build-arg",
             f"BASE_IMAGE={self.base_image}",
             "--build-arg",
@@ -89,6 +92,7 @@ def write_image_build_metadata(spec: WrapperImageSpec, result: ImageBuildResult)
                 "agent_tool_image": spec.agent_tool_image,
                 "build_context": str(spec.build_context),
                 "dockerfile_path": str(spec.dockerfile_path),
+                "platform": spec.platform,
                 "force_rebuild": spec.force_rebuild,
                 "built": result.built,
                 "exit_code": result.exit_code,
@@ -111,15 +115,18 @@ def wrapper_image_spec(
     agent: str,
     base_image: str,
     agent_tool_image: str,
+    wrapper_image: str | None = None,
+    platform: str = "linux/amd64",
     force_rebuild: bool = False,
 ) -> WrapperImageSpec:
     context = run_root / "wrapper-build" / safe_token(instance_id) / safe_token(agent)
     return WrapperImageSpec(
         base_image=base_image,
-        wrapper_image=default_wrapper_image(run_id, instance_id, agent),
+        wrapper_image=wrapper_image or default_wrapper_image(run_id, instance_id, agent),
         agent_tool_image=agent_tool_image,
         build_context=context,
         dockerfile_path=context / "Dockerfile",
+        platform=platform,
         force_rebuild=force_rebuild,
     )
 

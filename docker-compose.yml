@@ -1,5 +1,6 @@
 services:
   router:
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     build:
       context: .
     image: code-agent-router:local

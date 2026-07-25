@@ -1,9 +1,12 @@
-artifacts/
+artifacts/**
+!artifacts/.gitkeep
 .env
 .venv/
 node_modules/
 __pycache__/
 *.pyc
+.DS_Store
+**/.DS_Store
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/

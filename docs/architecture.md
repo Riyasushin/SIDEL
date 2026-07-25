@@ -1,65 +1,111 @@
-# Architecture
+# SIDEL Architecture
 
-## Topology
+## System boundary
 
-当前目标是一个共享 router 服务多个 SWE-bench task containers：
+SIDEL measures the gap between the response produced by an upstream model and the repository-level action executed by a coding agent after the response passes through a third-party router.
 
 ```text
 manager
-  ├─ writes router/effective_config.json
-  ├─ starts shared router
-  └─ starts N SWE-bench task containers
-
-SWE-bench task container
-  ├─ Codex  -> /v1/responses          -> shared router
-  └─ Claude -> /v1/messages           -> shared router
-
-shared router
-  ├─ API key -> ExperimentContext
-  ├─ proxy-record -> Kimi Code Plan
-  ├─ replay -> recorded trace response
-  └─ replay-inject -> recorded response + forged tool-call
+  ├─ plans agent × task × sample × turn contexts
+  ├─ writes manifests and the API-key context registry
+  ├─ launches isolated task containers
+  └─ analyzes review and execution evidence
+          |
+          v
+shared FastAPI router
+  ├─ OpenAI Chat Completions
+  ├─ OpenAI Responses
+  ├─ Anthropic Messages
+  ├─ proxy-record / replay / replay-inject / inject
+  ├─ L1-L4 response intervention
+  ├─ optional tool-call defense
+  └─ context-scoped traces and terminal state
+          ^
+          |
+official SWE-bench task container
+  └─ Codex or Claude Code operating in /testbed
 ```
+
+The manager controls experiment dimensions. The router controls the response path. The container harness owns repository execution. Dataset IDs, injection turns, and router modes never appear in the SWE-bench task prompt.
 
 ## Modules
 
+### `manager/`
+
+The manager creates `ExperimentManifest` records, generates unique routing keys, writes `effective_config.json`, resolves task images, schedules containers, and classifies results. It owns the experimental matrix but does not process LLM traffic.
+
 ### `router/`
 
-负责 LLM protocol proxy、协议转换、context routing、record/replay、注入和 review trace 捕获。router 不负责 Docker 生命周期，也不决定矩阵怎么枚举。
+The router exposes OpenAI- and Anthropic-compatible endpoints. The API key resolves to one immutable `ExperimentContext`, which contains the agent, task, mode, trace source, injection policy, and defense settings.
 
-核心文件：
+Important components:
 
-- `context.py`：API key 解析为 `ExperimentContext`。
-- `app.py`：FastAPI endpoints，按 context 执行 proxy/replay/inject。
-- `tracing.py`：per-context turn、request/response hash、artifact 写入。
-- `replay.py`：严格 replay 校验。
-- `injection.py`：OpenAI Responses / Chat / Anthropic Messages 注入。
+- `app.py`: HTTP wiring and mode dispatch.
+- `context.py`: API-key routing and context parsing.
+- `request_gate.py`: per-context locking plus process-wide single-flight protection for long dynamic generation.
+- `request_lifecycle.py`: trace start/finish, terminal checks, defense application, and timeout normalization.
+- `tracing.py`: context-scoped request and task-turn counters.
+- `replay.py`: exact and task-turn-compatible lookup.
+- `injection.py`: protocol-aware L1-L4 intervention.
+- `l3_dynamic.py` / `l4_optimizer.py`: dynamic continuation rewriting.
+- `tool_defense.py`: deterministic inspection of action-bearing tool calls.
+- `timeout_utils.py`: recursive clamping of tool timeout fields to 300 seconds.
 
 ### `swebench_container/`
 
-负责官方 SWE-bench task image 中的 agent 执行边界。该模块只知道 agent、task image、router URL/API key、artifact dir 和 timeout，不知道 dataset sample 或 injection turn。
+The container module resolves official SWE-bench task images, adds Codex or Claude Code tooling, runs the agent in `/testbed`, and captures container output. It receives only the task, agent settings, router URL/key, artifact path, and timeout.
 
-核心文件：
+## Router modes
 
-- `agents.py`：Codex/Claude adapter。
-- `models.py`：容器运行 spec/result。
-- `runner.py`：Docker command 构造和执行。
+- `proxy-record`: call the upstream provider and persist the clean request/response path.
+- `replay`: return a response from a recorded trace.
+- `replay-inject`: replay the recorded response and intervene at the configured task turn.
+- `inject`: call the upstream provider on each turn and intervene at the configured task turn.
 
-### `manager/`
+The first three modes define the stable record/replay experiment. `inject` is an online convenience mode for fresh trajectories.
 
-负责实验计划、manifest、shared router config、context registry 和结果 taxonomy。manager 拥有 dataset/sample/turn/matrix 维度，不把这些状态塞进 prompt。
+## Intervention levels
 
-核心文件：
+- **L1 — Response Substitution:** replace the provider response.
+- **L2 — Response Append:** preserve the provider response and append a forged action.
+- **L3 — LLM-Polished Injection:** rewrite the assistant text against the live task trajectory while retaining the selected action.
+- **L4 — Distribution Alignment:** ask the configured multi-source generation service for a task-compatible continuation and tool selection; dataset tool arguments remain locked.
 
-- `manifest.py`：生成 context manifest 和 router registry。
-- `analysis.py`：`review_outcome`、`execution_outcome`、context status taxonomy。
+L3 and L4 are mutually exclusive. Every dynamic request, raw response, parse result, retry, and final injection decision is stored beside the target turn.
 
-## Router Modes
+## Request lifecycle
 
-只保留三种主线模式：
+1. Extract the API key and resolve its `ExperimentContext`.
+2. Acquire the request gate.
+3. Classify the request role and allocate `turn_index`; allocate `task_turn_index` only for main task traffic.
+4. Persist `request.agent.json`.
+5. Proxy or replay the clean response.
+6. Apply the configured intervention when the resolved task turn matches.
+7. Recursively clamp injected tool timeout fields.
+8. Apply tool defense when enabled.
+9. Persist before/after, replay, injection, defense, and dynamic-generation artifacts.
+10. Mark the context terminal after the target injection/replay boundary.
+11. Render JSON or protocol-correct SSE and release the gate.
 
-- `proxy-record`：调用 Kimi，记录 agent request、upstream request/response、router response。
-- `replay`：按 `context_id + turn_index + endpoint + request_hash` 返回历史 response。
-- `replay-inject`：先 replay，在 `injection_turn` 按 `append` 或 `replace` 注入数据集 tool-call。
+If upstream processing fails, the allocated task turn is rolled back so a retry sees the same injection target.
 
-旧实验模式不再是 active code path；当前 router 只实现 `proxy-record`、`replay`、`replay-inject`。
+## Replay correctness
+
+`exact_request_hash` requires the recorded endpoint and stable request hash to match the live request. `task_turn_compatible` aligns main-agent task turns despite auxiliary title/reviewer drift, then rejects replay if the recorded response references a tool unavailable in the live request.
+
+Replay metadata records whether the response matched exactly, matched by task turn, failed because of tool incompatibility, or could not find the requested source turn.
+
+## Concurrency and terminal state
+
+Turn state is scoped by run/context, never globally. A context lock prevents overlapping requests from advancing one context twice. A process-wide single-flight gate prevents concurrent upstream or L4 connections from outliving the experiment context that owns them.
+
+After an injection or bounded replay completes, subsequent main-agent requests receive a terminal response. Reviewer traffic may still be recorded where the experiment requires observing the review path.
+
+## Safety invariants
+
+- Raw payloads require `payload_execution_allowed=true`.
+- Prompts never encode experiment controls.
+- The task container never mounts host secrets or the Docker socket.
+- `review_outcome` and `execution_outcome` remain separate.
+- API keys are redacted from public manifests and logs.
+- Runtime output stays under ignored `artifacts/`.

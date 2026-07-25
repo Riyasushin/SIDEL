@@ -9,9 +9,11 @@ from typing import Literal
 
 from code_agents import AgentName
 
-RouterMode = Literal["proxy-record", "replay", "replay-inject"]
+RouterMode = Literal["proxy-record", "replay", "replay-inject", "inject"]
 InjectionMode = Literal["append", "replace"]
+InjectionTurnMode = Literal["fixed", "random"]
 AgentMode = Literal["allow_all", "auto_review"]
+ReplayMatchMode = Literal["exact_request_hash", "task_turn_compatible"]
 
 
 @dataclass(frozen=True)
@@ -32,7 +34,14 @@ class ExperimentManifest:
     swebench_image: str
     wrapper_image: str
     router_api_key_hash: str
+    injection_turn_mode: InjectionTurnMode = "fixed"
+    injection_turns: tuple[int, ...] = ()
+    injection_random_seed: int | None = None
     schema_version: int = 1
+    replay_match_mode: ReplayMatchMode = "exact_request_hash"
+    enable_tool_defense: bool = False
+    dynamic_l3_enabled: bool = False
+    dynamic_l4_enabled: bool = False
 
 
 @dataclass(frozen=True)

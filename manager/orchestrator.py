@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Collection
 
 from manager.manifest import ExperimentManifest
 from swebench_container.models import ContainerRunSpec
@@ -19,10 +20,13 @@ class ExperimentOrchestrator:
         self.prompt_template = prompt_template_path.read_text(encoding="utf-8")
         self.api_keys_by_context = load_api_keys_by_context(run_root / "router" / "effective_config.json")
 
-    def build_container_specs(self) -> list[ContainerRunSpec]:
+    def build_container_specs(self, context_ids: Collection[str] | None = None) -> list[ContainerRunSpec]:
+        selected_context_ids = set(context_ids) if context_ids is not None else None
         specs: list[ContainerRunSpec] = []
         for manifest_path in sorted((self.run_root / "experiments").glob("*/manifest.json")):
             manifest = ExperimentManifest(**json.loads(manifest_path.read_text(encoding="utf-8")))
+            if selected_context_ids is not None and manifest.context_id not in selected_context_ids:
+                continue
             specs.append(self.build_container_spec(manifest))
         return specs
 
@@ -47,6 +51,7 @@ class ExperimentOrchestrator:
             wrapper_image=manifest.wrapper_image,
             issue_prompt=render_prompt(self.prompt_template, task),
             timeout_seconds=manifest.timeout_seconds,
+            platform=os.environ.get("DOCKER_PLATFORM", "linux/amd64"),
             docker_inspect_path=context_root / "container" / "docker.inspect.json",
         )
 

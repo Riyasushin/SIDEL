@@ -13,7 +13,7 @@ from pathlib import Path
 from manager.analysis import analyze_run
 from manager.dataset_profile import write_dataset_profile
 from manager.executor import ExperimentExecutor
-from manager.manifest import AgentMode, InjectionMode, RouterMode, write_manifests
+from manager.manifest import AgentMode, InjectionMode, InjectionTurnMode, RouterMode, write_manifests
 from manager.orchestrator import ExperimentOrchestrator
 from manager.planner import (
     MatrixPlanOptions,
@@ -38,12 +38,18 @@ def main() -> int:
     plan_parser.add_argument("--samples", default="1")
     plan_parser.add_argument("--agents", default="codex,claude")
     plan_parser.add_argument("--agent-mode", choices=["allow_all", "auto_review"], default="auto_review")
-    plan_parser.add_argument("--router-mode", choices=["proxy-record", "replay", "replay-inject"], default="proxy-record")
+    plan_parser.add_argument("--router-mode", choices=["proxy-record", "replay", "replay-inject", "inject"], default="proxy-record")
     plan_parser.add_argument("--injection-turns", default="0")
+    plan_parser.add_argument("--injection-turn-mode", choices=["fixed", "random"], default="fixed")
+    plan_parser.add_argument("--injection-random-seed", type=int, default=None)
     plan_parser.add_argument("--injection-mode", choices=["append", "replace"], default="append")
     plan_parser.add_argument("--payload-execution-allowed", action="store_true")
+    plan_parser.add_argument("--enable-tool-defense", action="store_true")
+    plan_parser.add_argument("--dynamic-l3", action="store_true")
+    plan_parser.add_argument("--dynamic-l4", action="store_true")
     plan_parser.add_argument("--timeout-seconds", type=int, default=1800)
     plan_parser.add_argument("--trace-source-root", type=Path, default=None)
+    plan_parser.add_argument("--replay-match-mode", choices=["exact_request_hash", "task_turn_compatible"], default="exact_request_hash")
     analyze_parser = subparsers.add_parser("analyze", help="summarize context result files under a run root")
     analyze_parser.add_argument("run_root", type=Path)
 
@@ -64,6 +70,7 @@ def main() -> int:
     run_parser.add_argument("--prompt-template", type=Path, default=Path("bench/prompts/solve_issue.md"))
     run_parser.add_argument("--dry-run", action="store_true")
     run_parser.add_argument("--build-images", action="store_true")
+    run_parser.add_argument("--workers", type=positive_int, default=4)
     run_parser.add_argument("--agent-tool-image", default="code-agent-router:local")
     run_parser.add_argument("--force-image-rebuild", action="store_true")
 
@@ -89,7 +96,7 @@ def main() -> int:
             agent_tool_image=args.agent_tool_image,
             force_image_rebuild=bool(args.force_image_rebuild),
         )
-        results = executor.run_all(dry_run=bool(args.dry_run), build_images=bool(args.build_images))
+        results = executor.run_all(dry_run=bool(args.dry_run), build_images=bool(args.build_images), workers=args.workers)
         print(json.dumps({"contexts": [result.context_id for result in results], "count": len(results)}, ensure_ascii=False))
         return 0
     raise AssertionError(args.command)
@@ -106,11 +113,25 @@ def build_orchestrator(args: argparse.Namespace) -> ExperimentOrchestrator:
 
 def plan(args: argparse.Namespace) -> int:
     router_mode: RouterMode = args.router_mode
-    direct_replace = router_mode == "replay-inject" and args.injection_mode == "replace"
+    injection_turn_mode: InjectionTurnMode = args.injection_turn_mode
+    injection_turns = parse_turns(args.injection_turns, router_mode)
+    direct_replace = (
+        router_mode == "replay-inject"
+        and args.injection_mode == "replace"
+        and injection_turn_mode == "fixed"
+        and injection_turns == (0,)
+    )
     if router_mode == "replay" and args.trace_source_root is None:
         raise SystemExit("--trace-source-root is required for replay")
     if router_mode == "replay-inject" and not direct_replace and args.trace_source_root is None:
-        raise SystemExit("--trace-source-root is required for replay-inject unless --injection-mode=replace")
+        raise SystemExit("--trace-source-root is required for replay-inject unless using fixed turn 0 with --injection-mode=replace")
+    if injection_turn_mode == "random":
+        if router_mode not in {"replay-inject", "inject"}:
+            raise SystemExit("--injection-turn-mode=random is only supported for replay-inject and inject")
+        if args.injection_random_seed is None:
+            raise SystemExit("--injection-random-seed is required when --injection-turn-mode=random")
+    if args.dynamic_l3 and args.dynamic_l4:
+        raise SystemExit("--dynamic-l3 and --dynamic-l4 are mutually exclusive")
     options = MatrixPlanOptions(
         run_id=args.run_id,
         router_mode=router_mode,
@@ -118,16 +139,29 @@ def plan(args: argparse.Namespace) -> int:
         agent_mode=args.agent_mode,  # type: ignore[arg-type]
         instance_ids=load_task_instance_ids(args.tasks, limit=args.task_limit, selected=args.instance_id),
         dataset_sample_ids=load_dataset_sample_ids(args.dataset, args.samples),
-        injection_turns=parse_turns(args.injection_turns, router_mode),
+        injection_turns=injection_turns,
         injection_mode=args.injection_mode,  # type: ignore[arg-type]
         payload_execution_allowed=bool(args.payload_execution_allowed),
+        enable_tool_defense=bool(args.enable_tool_defense),
+        dynamic_l3_enabled=bool(args.dynamic_l3),
+        dynamic_l4_enabled=bool(args.dynamic_l4),
         timeout_seconds=args.timeout_seconds,
         trace_source_root=args.trace_source_root,
+        replay_match_mode=args.replay_match_mode,
+        injection_turn_mode=injection_turn_mode,
+        injection_random_seed=args.injection_random_seed,
     )
     keyed_manifests = build_matrix_plan(options)
     registry_path = write_manifests(args.artifacts_root, keyed_manifests, router_mode)
     print(json.dumps({"registry_path": str(registry_path), "contexts": len(keyed_manifests)}, ensure_ascii=False))
     return 0
+
+
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be > 0")
+    return parsed
 
 
 if __name__ == "__main__":
