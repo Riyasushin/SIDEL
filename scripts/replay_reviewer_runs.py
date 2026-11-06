@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline rerun reviewer requests against a chosen DeepSeek model."""
+"""Offline rerun of stored reviewer requests against an explicitly selected model."""
 
 from __future__ import annotations
 
@@ -19,11 +19,19 @@ if str(REPO_ROOT) not in sys.path:
 
 from fastapi import HTTPException
 
-from manager.analysis import analyze_run_with_reviewer_reruns
+from manager.analysis import analyze_run_with_reviewer_reruns, review_metadata
 from router.config import Settings
 from router.models import model_alias_to_provider
 from router.protocols import anthropic_body_to_chat_completion, response_body_to_chat_completion
 from router.providers.registry import build_providers
+from router.reviewer import (
+    KIMI_NATIVE_STAGE1_STOP_COMPATIBILITY,
+    kimi_native_stage1_stop_decision,
+    prepare_reviewer_request,
+    reviewer_decision_status,
+    reviewer_stop_sequences,
+    visible_review_decision,
+)
 
 
 def slugify_label(value: str) -> str:
@@ -43,14 +51,26 @@ def default_output_names(model: str) -> tuple[str, str, str, str]:
 def build_settings_for_provider(provider: str, model: str) -> Settings:
     if provider == "kimi":
         return Settings(DEFAULT_PROVIDER="kimi", KIMI_MODEL=model)
-    return Settings(DEFAULT_PROVIDER="deepseek", DEEPSEEK_MODEL=model)
+    if provider == "qwen":
+        return Settings(DEFAULT_PROVIDER="qwen", QWEN_MODEL=model)
+    if provider == "deepseek":
+        return Settings(DEFAULT_PROVIDER="deepseek", DEEPSEEK_MODEL=model)
+    raise ValueError(f"Unsupported reviewer provider: {provider}")
+
+
+def selected_model(settings: Settings, provider: str, explicit_model: str = "") -> str:
+    model = explicit_model or getattr(settings, f"{provider}_model", "")
+    if not model:
+        raise ValueError(f"An explicit model ID is required for {provider}")
+    return model
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Replay stored reviewer requests against an OpenAI-compatible upstream model.")
     parser.add_argument("run_roots", nargs="+", type=Path)
     parser.add_argument("--model", default="", help="Preferred reviewer rerun model. Falls back to provider-specific env config.")
-    parser.add_argument("--provider", default="", choices=["", "deepseek", "kimi"], help="Override upstream provider. Defaults to model-based inference.")
+    parser.add_argument("--provider", default="", choices=["", "deepseek", "kimi", "qwen"], help="Override upstream provider. Defaults to model-based inference.")
+    parser.add_argument("--omit-stop-sequences", action="store_true", help="Explicit calibration setting: remove API stop sequences, retain the original prompt, and require complete decision tags. Recorded in output; do not mix with preserved-stop runs.")
     parser.add_argument("--rerun-dirname", default="", help="Per-run rerun output directory, relative to each run root.")
     parser.add_argument("--summary-name", default="", help="Per-run summary filename written under analysis/.")
     parser.add_argument("--details-name", default="", help="Per-run details filename written under analysis/.")
@@ -58,7 +78,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--concurrency", type=int, default=1, help="Maximum concurrent reviewer replays per run.")
     parser.add_argument("--resume-missing-only", action="store_true", help="Only replay reviewer requests that do not yet have meta.json or error.json.")
     parser.add_argument("--retry-errors-only", action="store_true", help="Only replay reviewer requests that currently have error.json and no successful meta.json.")
-    parser.add_argument("--retry-sleep-seconds", type=int, default=300, help="Sleep between retry rounds when --retry-errors-only is enabled and failures remain.")
+    parser.add_argument("--retry-sleep-seconds", type=int, default=300, help="Sleep between retry rounds when failures remain.")
+    parser.add_argument("--max-rounds", type=int, default=3, help="Finite maximum retry rounds.")
+    parser.add_argument("--deadline-seconds", type=float, default=1800, help="Total wallclock deadline including queues and retry sleeps.")
     return parser.parse_args()
 
 
@@ -81,7 +103,11 @@ def endpoint_for_reviewer_dir(reviewer_dir: Path) -> str:
     return "openai.chat"
 
 
-def build_chat_request(body: dict[str, Any], *, endpoint: str, model: str) -> dict[str, Any]:
+def build_chat_request(
+    body: dict[str, Any], *, endpoint: str, model: str,
+    settings: Settings | None = None, metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    body, _ = prepare_reviewer_request(body, endpoint=endpoint, settings=settings or Settings(), metadata=metadata)
     if endpoint == "anthropic.messages":
         chat_body = anthropic_body_to_chat_completion(body, model=model)
     elif endpoint == "openai.responses":
@@ -105,9 +131,14 @@ def iter_reviewer_dirs(run_root: Path) -> list[Path]:
 def iter_failed_reviewer_dirs(run_root: Path, rerun_dirname: str) -> list[Path]:
     rerun_root = rerun_output_dir(run_root, rerun_dirname)
     reviewers: list[Path] = []
-    for error_path in sorted(rerun_root.glob("*/**/error.json")):
-        rerun_dir = error_path.parent
-        if (rerun_dir / "meta.json").exists():
+    candidates = {path.parent for name in ("error.json", "meta.json") for path in rerun_root.glob(f"*/**/{name}")}
+    for rerun_dir in sorted(candidates):
+        meta_path = rerun_dir / "meta.json"
+        if meta_path.exists():
+            meta = load_json(meta_path)
+            if meta.get("status") == "ok" and meta.get("decision_status", "present") == "present":
+                continue
+        if not (rerun_dir / "source_ref.json").exists():
             continue
         source_ref = load_json(rerun_dir / "source_ref.json")
         source_request = source_ref.get("source_request") if isinstance(source_ref, dict) else None
@@ -144,10 +175,38 @@ async def rerun_single_reviewer(
     provider: Any,
     model: str,
     output_root: Path,
+    settings: Settings | None = None,
+    omit_stop_sequences: bool = False,
 ) -> dict[str, Any]:
-    request = load_json(reviewer_dir / "request.agent.json")
+    settings = settings or Settings()
+    request_path = reviewer_dir / "request.upstream.json"
+    if not request_path.exists():
+        request_path = reviewer_dir / "request.agent.json"
+    request = load_json(request_path)
     endpoint = endpoint_for_reviewer_dir(reviewer_dir)
-    chat_request = build_chat_request(request, endpoint=endpoint, model=model)
+    # Source tracing's request_role is heuristic; only explicit stage fields
+    # are safe to reuse. The body classifier is identical to the live path.
+    source_metadata = load_json(reviewer_dir / "metadata.json") if (reviewer_dir / "metadata.json").exists() else {}
+    explicit_stage = {key: source_metadata[key] for key in ("reviewer_stage", "review_stage") if key in source_metadata}
+    _, budget = prepare_reviewer_request(request, endpoint=endpoint, settings=settings, metadata=explicit_stage)
+    provenance = {key: value for key, value in review_metadata(reviewer_dir, request).items()
+                  if key in {"reviewed_action_id", "reviewed_call_id", "review_group_id"}}
+    native = (endpoint == "anthropic.messages" and getattr(provider, "name", "") == "kimi"
+              and settings.kimi_api_protocol == "anthropic")
+    if native:
+        upstream_request, _ = prepare_reviewer_request(request, endpoint=endpoint, settings=settings, metadata=explicit_stage)
+        upstream_request = provider.prepare_anthropic_body({**upstream_request, "model": model, "stream": False})
+    else:
+        upstream_request = build_chat_request(request, endpoint=endpoint, model=model, settings=settings, metadata=explicit_stage)
+        if callable(getattr(provider, "prepare_body", None)):
+            upstream_request = provider.prepare_body(upstream_request)
+    if omit_stop_sequences:
+        upstream_request.pop("stop", None)
+        upstream_request.pop("stop_sequences", None)
+    budget["original_stop_sequences"] = budget["request_stop_sequences"]
+    budget["request_stop_sequences"] = list(reviewer_stop_sequences(upstream_request))
+    budget["stop_policy"] = "omit" if omit_stop_sequences else "preserve"
+    budget["upstream_endpoint"] = "anthropic.messages" if native else "openai.chat"
     context_id = reviewer_dir.parents[2].name
     target_dir = output_root / context_id / reviewer_dir.name
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -157,27 +216,37 @@ async def rerun_single_reviewer(
         {
             "context_id": context_id,
             "reviewer_dir": reviewer_dir.name,
-            "source_request": str(reviewer_dir / "request.agent.json"),
+            "source_request": str(request_path),
+            "source_kind": request_path.name,
             "endpoint": endpoint,
             "model": model,
         },
     )
+    # Remove stale success/error evidence before a retry; source execution
+    # evidence is never edited by this script.
+    for name in ("meta.json", "error.json", "response.upstream.json"):
+        (target_dir / name).unlink(missing_ok=True)
+    write_json(target_dir / "reviewer-budget.json", budget)
+    write_json(target_dir / "request.upstream.json", upstream_request)
     started_at = datetime.now(timezone.utc).isoformat()
     started = time.monotonic()
     try:
-        response = await provider.chat_completion(chat_request)
+        async with asyncio.timeout(settings.request_timeout_seconds):
+            response = await (provider.anthropic_message(upstream_request) if native else provider.chat_completion(upstream_request))
     except HTTPException as exc:
         elapsed_ms = int((time.monotonic() - started) * 1000)
         error = {
             "status": "error",
             "error_type": "http_exception",
+            "transport_status": "error",
+            **budget,
+            **provenance,
             "status_code": exc.status_code,
             "detail": exc.detail,
             "started_at": started_at,
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "elapsed_ms": elapsed_ms,
         }
-        write_json(target_dir / "request.upstream.json", chat_request)
         write_json(target_dir / "error.json", error)
         return {"success": False, "context_id": context_id, "reviewer_dir": reviewer_dir.name}
     except Exception as exc:  # pragma: no cover - defensive
@@ -185,21 +254,48 @@ async def rerun_single_reviewer(
         error = {
             "status": "error",
             "error_type": type(exc).__name__,
+            "transport_status": "error",
+            **budget,
+            **provenance,
             "detail": str(exc),
             "started_at": started_at,
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "elapsed_ms": elapsed_ms,
         }
-        write_json(target_dir / "request.upstream.json", chat_request)
         write_json(target_dir / "error.json", error)
         return {"success": False, "context_id": context_id, "reviewer_dir": reviewer_dir.name}
     elapsed_ms = int((time.monotonic() - started) * 1000)
-    write_json(target_dir / "request.upstream.json", chat_request)
     write_json(target_dir / "response.upstream.json", response)
+    raw_decision_status = reviewer_decision_status(response, request=upstream_request)
+    classification = {
+        "provider": getattr(provider, "name", ""),
+        "kimi_api_protocol": settings.kimi_api_protocol if native else None,
+        **budget,
+    }
+    compatibility_evidence = {
+        **classification,
+        "decision_compatibility": KIMI_NATIVE_STAGE1_STOP_COMPATIBILITY,
+    }
+    compatibility_decision = kimi_native_stage1_stop_decision(
+        response, request=upstream_request, provenance=compatibility_evidence,
+    ) if native and raw_decision_status == "missing" else ""
+    if compatibility_decision:
+        classification = compatibility_evidence
+    decision_status = "present" if compatibility_decision else raw_decision_status
+    classification.update({
+        "raw_decision_status": raw_decision_status,
+        "normalized_decision": compatibility_decision or visible_review_decision(response, request=upstream_request),
+    })
+    success = decision_status == "present"
     write_json(
         target_dir / "meta.json",
         {
-            "status": "ok",
+            "status": "ok" if success else f"decision_{decision_status}",
+            "transport_status": "ok",
+            "decision_status": decision_status,
+            **classification,
+            "request_stop_sequences": list(reviewer_stop_sequences(upstream_request)),
+            **provenance,
             "started_at": started_at,
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "elapsed_ms": elapsed_ms,
@@ -207,10 +303,11 @@ async def rerun_single_reviewer(
             "model": model,
         },
     )
-    error_path = target_dir / "error.json"
-    if error_path.exists():
-        error_path.unlink()
-    return {"success": True, "context_id": context_id, "reviewer_dir": reviewer_dir.name}
+    if not success:
+        write_json(target_dir / "error.json", {
+            "status": f"decision_{decision_status}", "transport_status": "ok", "decision_status": decision_status,
+        })
+    return {"success": success, "transport_success": True, "context_id": context_id, "reviewer_dir": reviewer_dir.name}
 
 
 async def rerun_with_semaphore(
@@ -220,6 +317,8 @@ async def rerun_with_semaphore(
     provider: Any,
     model: str,
     output_root: Path,
+    settings: Settings | None = None,
+    omit_stop_sequences: bool = False,
 ) -> dict[str, Any]:
     async with semaphore:
         return await rerun_single_reviewer(
@@ -227,6 +326,8 @@ async def rerun_with_semaphore(
             provider=provider,
             model=model,
             output_root=output_root,
+            settings=settings,
+            omit_stop_sequences=omit_stop_sequences,
         )
 
 
@@ -247,6 +348,7 @@ async def rerun_run_root(
     concurrency: int,
     resume_missing_only: bool,
     retry_errors_only: bool,
+    omit_stop_sequences: bool = False,
 ) -> dict[str, Any]:
     settings = build_settings_for_provider(provider_name, model)
     provider = build_providers(settings)[provider_name]
@@ -266,21 +368,27 @@ async def rerun_run_root(
             provider=provider,
             model=model,
             output_root=output_root,
+            settings=settings,
+            omit_stop_sequences=omit_stop_sequences,
         )
         for reviewer_dir in reviewers
     ]
-    results = await asyncio.gather(*tasks) if tasks else []
+    async with asyncio.timeout(settings.context_timeout_seconds):
+        results = await asyncio.gather(*tasks) if tasks else []
     successes = sum(1 for result in results if result["success"])
     failures = sum(1 for result in results if not result["success"])
+    transport_successes = sum(1 for result in results if result.get("transport_success"))
     manifest = {
         "run_root": str(run_root),
         "provider": provider_name,
         "model": model,
+        "stop_policy": "omit" if omit_stop_sequences else "preserve",
         "concurrency": concurrency,
         "reviewer_request_total": len(reviewers),
         "resume_missing_only": resume_missing_only,
         "reviewer_rerun_success": successes,
         "reviewer_rerun_failed": failures,
+        "reviewer_rerun_transport_success": transport_successes,
         "retry_errors_only": retry_errors_only,
         "started_at": started_at,
         "finished_at": datetime.now(timezone.utc).isoformat(),
@@ -302,17 +410,30 @@ async def rerun_run_root(
         "reviewer_request_total": len(reviewers),
         "reviewer_rerun_success": successes,
         "reviewer_rerun_failed": failures,
+        "reviewer_rerun_transport_success": transport_successes,
         "summary": summary,
     }
 
 
 async def main_async() -> int:
     args = parse_args()
+    if args.max_rounds < 1 or args.deadline_seconds <= 0 or args.retry_sleep_seconds < 0:
+        raise ValueError("rounds/deadline must be positive and retry sleep non-negative")
+    try:
+        async with asyncio.timeout(args.deadline_seconds):
+            return await run_rounds(args)
+    except TimeoutError:
+        print("Reviewer rerun deadline exceeded", file=sys.stderr)
+        return 1
+
+
+async def run_rounds(args: argparse.Namespace) -> int:
     settings = Settings()
-    model = args.model or settings.kimi_model or settings.deepseek_model
-    provider_name = args.provider or model_alias_to_provider(model, settings.default_provider)
+    provider_name = args.provider or model_alias_to_provider(args.model, settings.default_provider)
+    model = selected_model(settings, provider_name, args.model)
     concurrency = validate_concurrency(args.concurrency)
-    rerun_dirname, summary_name, details_name, combined_summary_path = default_output_names(model)
+    omit_stop_sequences = bool(getattr(args, "omit_stop_sequences", False))
+    rerun_dirname, summary_name, details_name, combined_summary_path = default_output_names(model + ("-no-stop" if omit_stop_sequences else ""))
     if args.rerun_dirname:
         rerun_dirname = args.rerun_dirname
     if args.summary_name:
@@ -338,6 +459,7 @@ async def main_async() -> int:
                     concurrency=concurrency,
                     resume_missing_only=args.resume_missing_only,
                     retry_errors_only=args.retry_errors_only,
+                    omit_stop_sequences=omit_stop_sequences,
                 )
             )
         combined = {
@@ -351,12 +473,15 @@ async def main_async() -> int:
             "reviewer_request_total": sum(int(item["reviewer_request_total"]) for item in payloads),
             "reviewer_rerun_success": sum(int(item["reviewer_rerun_success"]) for item in payloads),
             "reviewer_rerun_failed": sum(int(item["reviewer_rerun_failed"]) for item in payloads),
+            "reviewer_rerun_transport_success": sum(int(item.get("reviewer_rerun_transport_success", 0)) for item in payloads),
             "runs": payloads,
         }
         write_json(combined_path, combined)
         print(json.dumps({**combined, "combined_summary_path": str(combined_path)}, ensure_ascii=False, indent=2))
-        if not args.retry_errors_only or combined["reviewer_rerun_failed"] == 0:
+        if combined["reviewer_rerun_failed"] == 0:
             return 0
+        if not args.retry_errors_only or round_index >= args.max_rounds:
+            return 1
         await asyncio.sleep(args.retry_sleep_seconds)
 
 
