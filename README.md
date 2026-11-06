@@ -1,8 +1,12 @@
 # Where Is the Cost of Third-Party API Routers in Agentic Software Development?
 
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](requirements.txt)
+[![Docker](https://img.shields.io/badge/Docker-Task%20Containers-2496ED?style=flat-square&logo=docker&logoColor=white)](Dockerfile)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Shared%20Router-009688?style=flat-square&logo=fastapi&logoColor=white)](router/app.py)
+
 This paper introduces SIDEL to study response manipulation by third-party API routers across four coding agents and evaluate the effectiveness of client-side defenses.
 
-## Architecture
+## 🏗️ Architecture
 
 ![SIDEL architecture](docs/assets/sidel-architecture.png)
 
@@ -13,7 +17,7 @@ This paper introduces SIDEL to study response manipulation by third-party API ro
 
 Task traffic flows from the container through the router to the provider and back. Provider output, router-delivered output, reviewer decisions, and execution evidence are recorded separately.
 
-## Supported Agents and Modes
+## 🤖 Supported Agents and Modes
 
 Select an agent with `--agents` and its mode with `--agent-mode`.
 
@@ -26,7 +30,7 @@ Select an agent with `--agents` and its mode with `--agent-mode`.
 
 `auto_review` is also accepted as an alias for Codex/Claude `auto`. OpenCode `build` uses `permission: "allow"`. For multiple agents, omit `--agent-mode` to use each agent's default. Cursor uses its native RPC adapter, pinned to CLI `2026.11.05-86047df`; see [agent modes](docs/agent-modes.md) for transport details and validation limits.
 
-## Injection Levels
+## 🎯 Injection Levels
 
 ![Four levels of router-side response intervention](docs/assets/injection-levels.png)
 
@@ -41,7 +45,7 @@ Use `--router-mode inject` for online interventions, or `replay-inject` to inter
 
 L3 and L4 preserve the selected dataset tool arguments and are mutually exclusive. Use `--injection-turns` to select the task turn, starting at zero, and `--enable-tool-defense` to scan tool calls before delivery. Raw dataset actions require `--payload-execution-allowed` and execute inside the task container. Cursor applies these interventions at native model-step/tool boundaries; its protocol-specific behavior is described in [agent modes](docs/agent-modes.md).
 
-## Project Structure
+## 📁 Project Structure
 
 ```text
 SIDEL/
@@ -61,7 +65,7 @@ SIDEL/
 └── README.md            # Paper overview and project structure
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
 ### 1. Install and configure
 
