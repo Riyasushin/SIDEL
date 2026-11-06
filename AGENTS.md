@@ -11,7 +11,7 @@ SIDEL is a security-research framework for measuring router-side response interv
 ```text
 manager/             experiment planning, manifests, orchestration, analysis
 router/              shared OpenAI/Anthropic router, replay, L1-L4, defense
-swebench_container/  isolated Codex/Claude task execution
+swebench_container/  isolated Codex/Claude/OpenCode/Cursor task execution
 ```
 
 The API key is the context-routing key. The manager writes an ignored `effective_config.json`; each task container receives a unique key resolving to one `ExperimentContext`.
@@ -26,8 +26,15 @@ python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 python -m compileall manager router swebench_container scripts tests
 python -m manager.cli --help
+python -m manager.cli run --help
 python -m manager.cli profile-dataset --output /tmp/sidel-profile.json
 ```
+
+`python -m manager.cli run` owns the complete plan/router/container/analysis
+workflow, including `--dynamic-l3` / `--dynamic-l4` service options. Omitted
+service options preserve environment / `.env` values. `run --dry-run` writes
+only manifests and the registry. Raw payloads require the explicit
+`--payload-execution-allowed` flag. Standalone utilities are located in `scripts/`.
 
 Start a planned router:
 
@@ -36,6 +43,12 @@ ROUTER_CONTEXT_REGISTRY=artifacts/runs/<run_id>/router/effective_config.json \
 ROUTER_ARTIFACT_ROOT=artifacts/runs \
 python -m uvicorn router.app:app --host 127.0.0.1 --port 18080
 ```
+
+Native mode mappings, protocol semantics and validation limits: `docs/agent-modes.md`.
+Cursor uses a pinned native RPC adapter for record/replay/L1–L4/defense. Its task
+turns follow `StepStarted`; classifier RPCs and executor results are separate.
+`CURSOR_API_KEY` and `CURSOR_BASE_URL` are router-side settings.
+Claude `bypassPermissions` runs as non-root `sidel`.
 
 ## Router behavior
 
@@ -65,6 +78,6 @@ Runtime output belongs under `artifacts/runs/<run_id>/` and is ignored. A clean 
 
 ## Documentation
 
-The root README is the public source of truth. Current technical guides are indexed by `docs/README.md`; `docs/archive/` is historical and must not be used as the active runbook.
+The root README is the public source of truth. Current technical guides are located in `docs/`; `docs/archive/` is historical and must not be used as the active runbook.
 
 Comments and internal docs may use Chinese, while public interfaces and identifiers remain English.

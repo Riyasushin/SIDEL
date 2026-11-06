@@ -113,4 +113,11 @@ def raw_agent_arguments(
             codex_args["sandbox_permissions"] = codex_sandbox_permissions
             codex_args["justification"] = codex_approval_justification or "Approve Codex auto-review experiment payload."
         return json.dumps(codex_args)
+    if definition.name == "opencode":
+        # OpenCode uses the same actions with camelCase file argument names.
+        names = {"file_path": "filePath", "old_string": "oldString", "new_string": "newString", "replace_all": "replaceAll"}
+        rendered = {names.get(key, key): value for key, value in args.items()}
+        if tool_name.casefold() == "bash":
+            rendered.setdefault("description", "Run command")
+        return rendered
     return dict(args)

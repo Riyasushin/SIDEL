@@ -6,6 +6,7 @@
 
 | Endpoint | Protocol |
 |---|---|
+| `GET/POST /cursor/{path}` | Cursor native RPC (record/replay/inject/defense) |
 | `GET /health` | Router status and context count |
 | `GET /v1/models` | Advertised provider models |
 | `POST /v1/chat/completions` | OpenAI Chat Completions |
@@ -53,6 +54,21 @@ Each turn directory can contain:
 - L3/L4 request, response, validation, and retry artifacts
 - defense scan and terminal markers
 
+## Cursor native RPC
+
+The Cursor CLI connects to `<router-url>/cursor` using its context routing key.
+Set `CURSOR_API_KEY` and optionally `CURSOR_BASE_URL` on the router. Account
+credentials and exchanged upstream tokens stay in the router; the CLI receives
+a short-lived, context-specific session token. Raw request/response bytes and
+metadata are stored under `router/native_traces/`, separately from LLM traces.
+The CLI uses the documented HTTP/1 SSE fallback for native agent streaming.
+`cursor_wire.py` decodes protobuf messages; `cursor_session.py` handles model-step
+boundaries, shared L1–L4 generation, native tool delivery and execution evidence.
+`cursor_replay.py` validates native recordings. Replay uses client-message
+sequence barriers so the CLI can finish tools before the stream advances.
+Native classifier requests remain live. See [agent modes](agent-modes.md) for
+matching rules, supported tools, transport/version limits and verification status.
+
 ## Replay
 
 Exact mode requires a stable request-hash match. Task-turn-compatible mode aligns main task turns and validates that any tool called by the recorded response is available in the live request. Incompatible responses fail closed with a structured replay outcome.
@@ -66,7 +82,11 @@ L3 renders the active task, recent trajectory, upstream response, selected attac
 - ungrounded trajectory prefaces
 - drift in important dependency or task terms
 
-Backend selection is `deepseek_chat` or `call_versions_official`.
+Backend selection is `deepseek_chat` or `call_versions_official`. Enable L3 with
+`python -m manager.cli run --dynamic-l3` plus the desired experiment options.
+The manager passes explicit `--dynamic-l3-*` options to the router environment;
+otherwise `DYNAMIC_L3_*` values are read from the environment or `.env`.
+See [manager-guide.md](manager-guide.md) for a complete invocation.
 
 ## L4
 

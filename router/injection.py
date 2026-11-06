@@ -16,7 +16,7 @@ from router.l4_optimizer import DynamicL4Options, optimize_l4_injection
 from router.models import build_tool_call_completion, current_timestamp, zero_response_usage
 from router.tracing import write_trace_event, write_turn_artifact
 
-Protocol = Literal["openai.chat", "openai.responses", "anthropic.messages"]
+Protocol = Literal["openai.chat", "openai.responses", "anthropic.messages", "cursor.rpc"]
 
 
 # L4 must be globally single-flight inside a router process.  The lock covers
@@ -559,6 +559,14 @@ def render_injected_response(
             request_id=request_id,
         )
     tool_input = coerce_tool_input(rendered_arguments)
+    if protocol == 'cursor.rpc':
+        # Internal normalized representation only. CursorSession encodes native
+        # ExecServerMessage/InteractionUpdate messages for the actual transport.
+        content = [] if mode == 'replace' else copy.deepcopy(response.get('content', []))
+        if response_text:
+            content.append({'type': 'text', 'text': response_text})
+        content.append({'type': 'tool_use', 'id': f'call_attack_{request_id}', 'name': tool_name, 'input': tool_input})
+        return {'type': 'cursor.native_step', 'content': content}
     if mode == "replace":
         return build_anthropic_tool_use_with_text(
             model=model,

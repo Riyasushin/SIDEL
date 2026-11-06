@@ -6,6 +6,7 @@ import shlex
 import subprocess
 import time
 from pathlib import Path
+from code_agents import require_agent_name, resolve_agent_mode
 
 from swebench_container.agents import adapter_for
 from swebench_container.models import ContainerRunResult, ContainerRunSpec
@@ -41,7 +42,8 @@ class DockerTaskRunner:
         for key, value in sorted(env.items()):
             command.extend(["--env", f"{key}={value}"])
         command.append(spec.wrapper_image or spec.swebench_image)
-        command.extend(["sh", "-lc", wrapped_agent_script(adapter.build_command(spec))])
+        non_root = require_agent_name(spec.agent) == "claude" and resolve_agent_mode(spec.agent, spec.agent_mode) == "bypassPermissions"
+        command.extend(["sh", "-lc", wrapped_agent_script(adapter.build_command(spec), non_root=non_root)])
         return command
 
     def run(self, spec: ContainerRunSpec) -> ContainerRunResult:
@@ -85,12 +87,13 @@ class DockerTaskRunner:
                 time.sleep(POLL_INTERVAL_SECONDS)
 
 
-def wrapped_agent_script(agent_command: list[str]) -> str:
+def wrapped_agent_script(agent_command: list[str], *, non_root: bool = False) -> str:
     quoted_command = quote_agent_command(agent_command)
-    return "\n".join(
+    script = "\n".join(
         [
             "set +e",
             "mkdir -p ${CODEX_HOME:-/tmp/codex-home} ${CLAUDE_CONFIG_DIR:-/tmp/claude-home}",
+            'if [ -n "${SIDEL_CURSOR_CONFIG:-}" ]; then mkdir -p "$CURSOR_CONFIG_DIR"; printf "%s" "$SIDEL_CURSOR_CONFIG" > "$CURSOR_CONFIG_DIR/cli-config.json"; fi',
             quoted_command,
             "agent_exit=$?",
             "git diff --binary > /artifacts/final.patch 2>/artifacts/git.diff.stderr || true",
@@ -98,6 +101,14 @@ def wrapped_agent_script(agent_command: list[str]) -> str:
             "exit ${agent_exit}",
         ]
     )
+    if non_root:
+        # Claude's native bypassPermissions mode refuses to run as root.
+        return "\n".join([
+            "set -e",
+            "chown -R sidel /testbed /artifacts",
+            f"runuser -u sidel -- sh -c {shlex.quote(script)}",
+        ])
+    return script
 
 
 def quote_agent_command(agent_command: list[str]) -> str:
@@ -158,12 +169,12 @@ def redact_command(command: list[str]) -> list[str]:
 
 def is_secret_env(value: str) -> bool:
     key = value.split("=", 1)[0].upper()
-    return key in {"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ROUTER_API_KEY", "KIMI_API_KEY", "DEEPSEEK_API_KEY"}
+    return key in {"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ROUTER_API_KEY", "KIMI_API_KEY", "DEEPSEEK_API_KEY", "CURSOR_API_KEY"}
 
 
 def redact_value(value):
     if isinstance(value, dict):
-        return {key: ("<redacted>" if key.upper() in {"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ROUTER_API_KEY", "KIMI_API_KEY", "DEEPSEEK_API_KEY"} else redact_value(item)) for key, item in value.items()}
+        return {key: ("<redacted>" if is_secret_env(key) else redact_value(item)) for key, item in value.items()}
     if isinstance(value, list):
         return [redact_env_string(item) if isinstance(item, str) else redact_value(item) for item in value]
     if isinstance(value, str):
@@ -187,6 +198,7 @@ def serializable_spec(spec: ContainerRunSpec) -> dict[str, object]:
     if spec.docker_inspect_path is not None:
         data["docker_inspect_path"] = str(spec.docker_inspect_path)
     data["router_api_key"] = "<redacted>"
+    data["environment"] = redact_value(spec.environment)
     return data
 
 

@@ -7,12 +7,11 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Literal
 
-from code_agents import AgentName
+from code_agents import AgentMode, AgentName
 
 RouterMode = Literal["proxy-record", "replay", "replay-inject", "inject"]
 InjectionMode = Literal["append", "replace"]
 InjectionTurnMode = Literal["fixed", "random"]
-AgentMode = Literal["allow_all", "auto_review"]
 ReplayMatchMode = Literal["exact_request_hash", "task_turn_compatible"]
 
 

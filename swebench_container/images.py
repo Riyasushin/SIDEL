@@ -72,6 +72,7 @@ FROM ${AGENT_TOOL_IMAGE} AS agent_tools
 FROM ${BASE_IMAGE}
 COPY --from=agent_tools /usr/local /usr/local
 ENV PATH=/usr/local/bin:$PATH
+RUN id -u sidel >/dev/null 2>&1 || useradd --create-home --shell /bin/sh sidel
 WORKDIR /testbed
 """,
         encoding="utf-8",

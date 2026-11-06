@@ -9,10 +9,10 @@ SIDEL is a security-research platform for measuring whether a third-party LLM ro
 ```text
 manager/             experiment planning, manifests, containers, analysis
 router/              shared OpenAI/Anthropic-compatible LLM router
-swebench_container/  isolated Codex/Claude execution in task images
+swebench_container/  isolated coding-agent execution in task images
 data/                400-record intervention dataset
 bench/               SWE-bench Lite task snapshot and prompt
-scripts/             experiment and analysis entry points
+scripts/             curated data, diagnostic, and analysis utilities
 tests/               unit and async integration tests
 docs/                current guides; archive/ contains historical records
 artifacts/           ignored runtime output
@@ -20,12 +20,10 @@ artifacts/           ignored runtime output
 
 ## Supported implementation
 
-The public adapters support:
-
-- Codex over OpenAI Responses
-- Claude Code over Anthropic Messages
-
-The protocol router also handles OpenAI Chat Completions. The manuscript reports experiments with Cursor and OpenCode, but this release does not advertise automated container adapters that are absent from `code_agents.py`.
+The CLI adapters support Codex over OpenAI Responses, Claude Code over Anthropic
+Messages, OpenCode over Chat Completions, and Cursor over its native RPC protocol.
+[Agent modes](agent-modes.md) lists the native configurations, Cursor's RPC replay
+and intervention semantics, and the current validation limits.
 
 ## Installation
 
@@ -52,6 +50,7 @@ The Docker image installs current Codex and Claude Code CLIs. Local Python depen
 
 - `KIMI_BASE_URL`, `KIMI_ANTHROPIC_BASE_URL`, `KIMI_API_PROTOCOL`, `KIMI_API_KEY`, `KIMI_MODEL`
 - `DEEPSEEK_BASE_URL`, `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`
+- `CURSOR_BASE_URL`, `CURSOR_API_KEY`: native Cursor backend and account credential, used only by the router
 
 ### Dynamic intervention
 
@@ -70,7 +69,7 @@ Real credentials belong in ignored `.env` or the process environment.
 5. Analyze review and execution evidence.
 6. Aggregate DSR/WBR inputs from the analysis outputs.
 
-The root README contains executable examples.
+Use `python -m manager.cli run` for the complete workflow, including L3/L4 service configuration and router lifecycle. The root README contains executable examples; standalone utilities are available in [scripts/](../scripts/).
 
 ## Injection selection
 

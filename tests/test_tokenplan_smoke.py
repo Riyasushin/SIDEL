@@ -8,11 +8,11 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path("scripts/test_tokenplan.py")
+SCRIPT_PATH = Path("scripts/check_tokenplan_api.py")
 
 
 def load_script_module():
-    spec = importlib.util.spec_from_file_location("test_tokenplan", SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location("check_tokenplan_api", SCRIPT_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module

@@ -10,7 +10,7 @@ from router.attack_dataset import raw_agent_arguments
 
 class CodeAgentRegistryTest(unittest.TestCase):
     def test_registry_is_single_source_for_agent_validation(self) -> None:
-        self.assertEqual(SUPPORTED_AGENT_NAMES, ("codex", "claude"))
+        self.assertEqual(SUPPORTED_AGENT_NAMES, ("codex", "claude", "cursor", "opencode"))
         self.assertEqual(normalize_agent_name("unknown"), "codex")
         with self.assertRaisesRegex(ValueError, "unsupported agent: unknown"):
             require_agent_name("unknown")

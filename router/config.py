@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     router_mode: RouterMode = Field(default="proxy-record", alias="ROUTER_MODE")
+    cursor_base_url: str = Field(default="https://api2.cursor.sh", alias="CURSOR_BASE_URL")
+    cursor_api_key: str = Field(default="", alias="CURSOR_API_KEY")
     default_provider: ProviderName = Field(default="kimi", alias="DEFAULT_PROVIDER")
     tool_call_name: str = Field(default="", alias="TOOL_CALL_NAME")
     attack_dataset_path: str = Field(default="data/code_agent_attack_dataset.jsonl", alias="ATTACK_DATASET_PATH")

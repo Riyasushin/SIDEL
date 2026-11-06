@@ -4,6 +4,8 @@ ARG DEBIAN_MIRROR=http://mirrors.tuna.tsinghua.edu.cn/debian
 ARG DEBIAN_SECURITY_MIRROR=http://mirrors.tuna.tsinghua.edu.cn/debian-security
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 ARG NPM_REGISTRY=https://registry.npmmirror.com
+ARG OPENCODE_VERSION=1.2.20
+ARG CURSOR_VERSION=2026.11.05-86047df
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
@@ -33,7 +35,16 @@ RUN python3 -m pip install \
         -r /app/requirements.txt
 
 RUN npm config set registry "${NPM_REGISTRY}" \
-    && npm install -g @openai/codex@latest @anthropic-ai/claude-code@latest
+    && npm install -g @openai/codex@latest @anthropic-ai/claude-code@latest opencode-ai@${OPENCODE_VERSION}
+
+RUN case "$(dpkg --print-architecture)" in \
+        amd64) cursor_arch=x64 ;; arm64) cursor_arch=arm64 ;; *) exit 1 ;; \
+    esac \
+    && mkdir -p /usr/local/lib/cursor-agent \
+    && curl -fsSL "https://downloads.cursor.com/lab/${CURSOR_VERSION}/linux/${cursor_arch}/agent-cli-package.tar.gz" -o /tmp/cursor-agent.tar.gz \
+    && tar -xzf /tmp/cursor-agent.tar.gz --strip-components=1 -C /usr/local/lib/cursor-agent \
+    && ln -s /usr/local/lib/cursor-agent/cursor-agent /usr/local/bin/cursor-agent \
+    && rm /tmp/cursor-agent.tar.gz
 
 COPY code_agents.py /app/code_agents.py
 COPY router /app/router

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from code_agents import require_agent_name
+from code_agents import agent_definition, require_agent_name, resolve_agent_mode
 from manager.manifest import (
     AgentMode,
     AgentName,
@@ -27,7 +27,7 @@ class MatrixPlanOptions:
     run_id: str
     router_mode: RouterMode
     agents: tuple[AgentName, ...]
-    agent_mode: AgentMode
+    agent_mode: AgentMode | None
     instance_ids: tuple[str, ...]
     dataset_sample_ids: tuple[str, ...]
     injection_turns: tuple[int | None, ...]
@@ -91,6 +91,8 @@ def build_matrix_plan(options: MatrixPlanOptions) -> dict[str, ExperimentManifes
     turns = effective_turns(options)
     sample_ids = effective_sample_ids(options)
     for agent in options.agents:
+        resolve_agent_mode(agent, options.agent_mode)
+        agent_mode = options.agent_mode or agent_definition(agent).default_mode
         for instance_id in options.instance_ids:
             for sample_id in sample_ids:
                 for turn in turns:
@@ -100,7 +102,7 @@ def build_matrix_plan(options: MatrixPlanOptions) -> dict[str, ExperimentManifes
                         run_id=options.run_id,
                         context_id=context_id,
                         agent=agent,
-                        agent_mode=options.agent_mode,
+                        agent_mode=agent_mode,
                         instance_id=instance_id,
                         router_mode=options.router_mode,
                         trace_source_dir=trace_source_dir(options, instance_id, agent),
@@ -178,6 +180,8 @@ def load_jsonl(path: Path) -> list[dict[str, object]]:
 
 
 def expand_selector(selector: str, row_count: int) -> list[str]:
+    if selector == "all":
+        return [str(index) for index in range(1, row_count + 1)]
     if ":" not in selector:
         return [selector]
     start_s, end_s = selector.split(":", 1)
@@ -190,7 +194,10 @@ def expand_selector(selector: str, row_count: int) -> list[str]:
 
 def expand_turn_selector(selector: str) -> list[int]:
     if ":" not in selector:
-        return [int(selector)]
+        turn = int(selector)
+        if turn < 0:
+            raise ValueError(f"invalid injection turn: {selector}")
+        return [turn]
     start_s, end_s = selector.split(":", 1)
     start = int(start_s)
     end = int(end_s)
@@ -232,7 +239,7 @@ def context_id_for(options: MatrixPlanOptions, agent: AgentName, instance_id: st
             safe_token(options.run_id),
             safe_token(instance_id),
             agent,
-            options.agent_mode,
+            options.agent_mode or agent_definition(agent).default_mode,
             safe_token(sample_id),
             turn_part,
         ]

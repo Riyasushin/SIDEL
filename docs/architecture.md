@@ -23,7 +23,7 @@ shared FastAPI router
           ^
           |
 official SWE-bench task container
-  └─ Codex or Claude Code operating in /testbed
+  └─ Codex, Claude Code, OpenCode, or Cursor operating in /testbed
 ```
 
 The manager controls experiment dimensions. The router controls the response path. The container harness owns repository execution. Dataset IDs, injection turns, and router modes never appear in the SWE-bench task prompt.
@@ -34,9 +34,16 @@ The manager controls experiment dimensions. The router controls the response pat
 
 The manager creates `ExperimentManifest` records, generates unique routing keys, writes `effective_config.json`, resolves task images, schedules containers, and classifies results. It owns the experimental matrix but does not process LLM traffic.
 
+`cli.py run` delegates to `workflow.py` for plan validation, context selection,
+router startup, sequential container execution, and analysis. `router_process.py`
+starts Uvicorn with the active Python interpreter and provides readiness and
+shutdown helpers. Explicit L3/L4 service options enter the child environment;
+unset options use the router settings from the environment or `.env`. Startup
+failures and execution exceptions terminate the router child.
+
 ### `router/`
 
-The router exposes OpenAI- and Anthropic-compatible endpoints. The API key resolves to one immutable `ExperimentContext`, which contains the agent, task, mode, trace source, injection policy, and defense settings.
+The router exposes OpenAI- and Anthropic-compatible endpoints, plus a separate `/cursor/` native RPC recording proxy. The API key resolves to one immutable `ExperimentContext`, which contains the agent, task, mode, trace source, injection policy, and defense settings.
 
 Important components:
 
@@ -51,9 +58,17 @@ Important components:
 - `tool_defense.py`: deterministic inspection of action-bearing tool calls.
 - `timeout_utils.py`: recursive clamping of tool timeout fields to 300 seconds.
 
+`cursor_native.py` authenticates task routing credentials, exchanges the router-held
+Cursor account key for a short-lived upstream token, and streams native RPC bytes
+into per-context `native_traces/`. The CLI uses its HTTP/1 SSE fallback.
+`cursor_wire.py`, `cursor_session.py`, and `cursor_replay.py` decode native model
+steps, call the shared intervention/defense code, correlate executor results, and
+replay recorded streams with client-message barriers. Native step boundaries and
+classifier RPCs remain distinct from direct model API requests.
+
 ### `swebench_container/`
 
-The container module resolves official SWE-bench task images, adds Codex or Claude Code tooling, runs the agent in `/testbed`, and captures container output. It receives only the task, agent settings, router URL/key, artifact path, and timeout.
+The container module resolves official SWE-bench task images, adds coding-agent CLI tooling, runs the agent in `/testbed`, and captures container output. It receives only the task, agent settings, router URL/key, artifact path, and timeout.
 
 ## Router modes
 

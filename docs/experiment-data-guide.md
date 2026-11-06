@@ -41,6 +41,15 @@ artifacts/runs/<run_id>/
 
 Optional artifacts appear only when the corresponding operation runs.
 
+Cursor writes `router/native_traces/<request-id>/` with `request.body.bin`,
+`response.body.bin`, and `metadata.json`; streaming records also include upstream
+bytes and `upstream.frames.jsonl` / `response.frames.jsonl`. Frame records carry
+client sequence watermarks for replay. Keep this directory beside `traces/` when
+copying a replay source. Decoded model-step artifacts live in `traces/*-cursor.rpc/`
+with `turn_basis=cursor.step_started`. `execution.native.json` links the injected
+action to its native executor result or defense block. Native classifier evidence
+uses separate reviewer directories and is attributed by tool-call ID.
+
 ## Manifest fields
 
 Each context manifest records:

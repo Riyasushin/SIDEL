@@ -14,14 +14,13 @@ from typing import Any, Literal
 
 from fastapi import Header, HTTPException
 
-from code_agents import AgentName, normalize_agent_name
+from code_agents import AgentMode, AgentName, AGENT_DEFINITIONS, normalize_agent_name
 from router.config import ReplayMatchMode, Settings
 
 
 RouterMode = Literal["proxy-record", "replay", "replay-inject", "inject"]
 InjectionMode = Literal["append", "replace"]
 InjectionTurnMode = Literal["fixed", "random"]
-AgentMode = Literal["allow_all", "auto_review", "unknown"]
 
 
 @dataclass(frozen=True)
@@ -222,7 +221,8 @@ def normalize_replay_match_mode(value: str) -> ReplayMatchMode:
 
 
 def normalize_agent_mode(value: str) -> AgentMode:
-    if value not in {"allow_all", "auto_review", "unknown"}:
+    modes = {mode for definition in AGENT_DEFINITIONS.values() for mode in definition.modes}
+    if value not in modes | {"allow_all", "auto_review", "unknown", "auto-review"}:
         return "unknown"
     return value  # type: ignore[return-value]
 

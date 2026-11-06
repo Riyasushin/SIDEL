@@ -1,8 +1,4 @@
-"""Command line entrypoint for experiment planning.
-
-当前 CLI 先只负责生成 manifest 和 shared-router registry；启动 router、调度容器、
-分析汇总会继续挂在 manager 这个边界下，而不是回到旧 scripts。
-"""
+"""Command line entrypoint for experiment planning, execution, and analysis."""
 
 from __future__ import annotations
 
@@ -15,6 +11,7 @@ from manager.dataset_profile import write_dataset_profile
 from manager.executor import ExperimentExecutor
 from manager.manifest import AgentMode, InjectionMode, InjectionTurnMode, RouterMode, write_manifests
 from manager.orchestrator import ExperimentOrchestrator
+from manager.workflow import add_run_arguments, run
 from manager.planner import (
     MatrixPlanOptions,
     build_matrix_plan,
@@ -28,6 +25,8 @@ from manager.planner import (
 def main() -> int:
     parser = argparse.ArgumentParser(prog="python -m manager.cli")
     subparsers = parser.add_subparsers(dest="command", required=True)
+    workflow_parser = subparsers.add_parser("run", help="plan, start router, run containers, and analyze")
+    add_run_arguments(workflow_parser)
     plan_parser = subparsers.add_parser("plan", help="write context manifests and shared router config")
     plan_parser.add_argument("--run-id", required=True)
     plan_parser.add_argument("--artifacts-root", type=Path, default=Path("artifacts/runs"))
@@ -37,7 +36,7 @@ def main() -> int:
     plan_parser.add_argument("--dataset", type=Path, default=Path("data/code_agent_attack_dataset.jsonl"))
     plan_parser.add_argument("--samples", default="1")
     plan_parser.add_argument("--agents", default="codex,claude")
-    plan_parser.add_argument("--agent-mode", choices=["allow_all", "auto_review"], default="auto_review")
+    plan_parser.add_argument("--agent-mode", default=None, help="Native mode for the selected agents; omit for per-agent defaults")
     plan_parser.add_argument("--router-mode", choices=["proxy-record", "replay", "replay-inject", "inject"], default="proxy-record")
     plan_parser.add_argument("--injection-turns", default="0")
     plan_parser.add_argument("--injection-turn-mode", choices=["fixed", "random"], default="fixed")
@@ -76,6 +75,8 @@ def main() -> int:
 
     args = parser.parse_args()
 
+    if args.command == "run":
+        return run(args)
     if args.command == "plan":
         return plan(args)
     if args.command == "analyze":

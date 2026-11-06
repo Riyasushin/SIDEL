@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from router.config import Settings, get_settings
 from router.context import ExperimentContext, extract_api_key, load_context_registry
+from router.cursor_native import proxy_cursor
 from router.injection import inject_tool_call, inject_tool_call_async, should_direct_replace_injection, should_inject
 from router.l3_dynamic import DEFAULT_ACCEPTANCE_OBJECTIVE, DynamicL3Options
 from router.l4_optimizer import DynamicL4Options
@@ -39,6 +40,11 @@ app = FastAPI(
 
 RECENT_CHAT_REQUESTS: list[dict[str, Any]] = []
 MAX_RECORDED_REQUESTS = 20
+
+
+@app.api_route("/cursor/{path:path}", methods=["GET", "POST"])
+async def cursor_native(request: Request, path: str, settings: Settings = Depends(get_settings)):
+    return await proxy_cursor(request, path, settings)
 
 
 def serialize_context_endpoint(handler):

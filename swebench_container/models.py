@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
 
-from code_agents import AgentName
-
-AgentMode = Literal["allow_all", "auto_review"]
+from code_agents import AgentMode, AgentName
 
 
 @dataclass(frozen=True)

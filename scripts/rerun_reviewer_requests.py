@@ -19,19 +19,12 @@ if str(REPO_ROOT) not in sys.path:
 
 from fastapi import HTTPException
 
-from manager.analysis import analyze_run_with_reviewer_reruns, review_metadata
+from manager.analysis import analyze_run_with_reviewer_reruns, classify_reviewer_response
 from router.config import Settings
 from router.models import model_alias_to_provider
 from router.protocols import anthropic_body_to_chat_completion, response_body_to_chat_completion
 from router.providers.registry import build_providers
-from router.reviewer import (
-    KIMI_NATIVE_STAGE1_STOP_COMPATIBILITY,
-    kimi_native_stage1_stop_decision,
-    prepare_reviewer_request,
-    reviewer_decision_status,
-    reviewer_stop_sequences,
-    visible_review_decision,
-)
+
 
 
 def slugify_label(value: str) -> str:
@@ -51,8 +44,6 @@ def default_output_names(model: str) -> tuple[str, str, str, str]:
 def build_settings_for_provider(provider: str, model: str) -> Settings:
     if provider == "kimi":
         return Settings(DEFAULT_PROVIDER="kimi", KIMI_MODEL=model)
-    if provider == "qwen":
-        return Settings(DEFAULT_PROVIDER="qwen", QWEN_MODEL=model)
     if provider == "deepseek":
         return Settings(DEFAULT_PROVIDER="deepseek", DEEPSEEK_MODEL=model)
     raise ValueError(f"Unsupported reviewer provider: {provider}")
@@ -69,7 +60,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Replay stored reviewer requests against an OpenAI-compatible upstream model.")
     parser.add_argument("run_roots", nargs="+", type=Path)
     parser.add_argument("--model", default="", help="Preferred reviewer rerun model. Falls back to provider-specific env config.")
-    parser.add_argument("--provider", default="", choices=["", "deepseek", "kimi", "qwen"], help="Override upstream provider. Defaults to model-based inference.")
+    parser.add_argument("--provider", default="", choices=["", "deepseek", "kimi"], help="Override upstream provider. Defaults to model-based inference.")
     parser.add_argument("--omit-stop-sequences", action="store_true", help="Explicit calibration setting: remove API stop sequences, retain the original prompt, and require complete decision tags. Recorded in output; do not mix with preserved-stop runs.")
     parser.add_argument("--rerun-dirname", default="", help="Per-run rerun output directory, relative to each run root.")
     parser.add_argument("--summary-name", default="", help="Per-run summary filename written under analysis/.")
@@ -107,7 +98,6 @@ def build_chat_request(
     body: dict[str, Any], *, endpoint: str, model: str,
     settings: Settings | None = None, metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    body, _ = prepare_reviewer_request(body, endpoint=endpoint, settings=settings or Settings(), metadata=metadata)
     if endpoint == "anthropic.messages":
         chat_body = anthropic_body_to_chat_completion(body, model=model)
     elif endpoint == "openai.responses":
@@ -118,6 +108,13 @@ def build_chat_request(
         chat_body["stream"] = False
     chat_body["stream"] = False
     return chat_body
+
+
+def reviewer_stop_sequences(body: dict[str, Any]) -> tuple[str, ...]:
+    value = body.get("stop_sequences", body.get("stop", []))
+    if isinstance(value, str):
+        return (value,)
+    return tuple(item for item in (value or []) if isinstance(item, str))
 
 
 def rerun_output_dir(run_root: Path, rerun_dirname: str) -> Path:
@@ -184,26 +181,21 @@ async def rerun_single_reviewer(
         request_path = reviewer_dir / "request.agent.json"
     request = load_json(request_path)
     endpoint = endpoint_for_reviewer_dir(reviewer_dir)
-    # Source tracing's request_role is heuristic; only explicit stage fields
-    # are safe to reuse. The body classifier is identical to the live path.
     source_metadata = load_json(reviewer_dir / "metadata.json") if (reviewer_dir / "metadata.json").exists() else {}
-    explicit_stage = {key: source_metadata[key] for key in ("reviewer_stage", "review_stage") if key in source_metadata}
-    _, budget = prepare_reviewer_request(request, endpoint=endpoint, settings=settings, metadata=explicit_stage)
-    provenance = {key: value for key, value in review_metadata(reviewer_dir, request).items()
-                  if key in {"reviewed_action_id", "reviewed_call_id", "review_group_id"}}
+    provenance = {key: source_metadata[key] for key in
+                  ("reviewed_action_id", "reviewed_call_id", "review_group_id") if key in source_metadata}
     native = (endpoint == "anthropic.messages" and getattr(provider, "name", "") == "kimi"
               and settings.kimi_api_protocol == "anthropic")
     if native:
-        upstream_request, _ = prepare_reviewer_request(request, endpoint=endpoint, settings=settings, metadata=explicit_stage)
-        upstream_request = provider.prepare_anthropic_body({**upstream_request, "model": model, "stream": False})
+        upstream_request = provider.prepare_anthropic_body({**request, "model": model, "stream": False})
     else:
-        upstream_request = build_chat_request(request, endpoint=endpoint, model=model, settings=settings, metadata=explicit_stage)
+        upstream_request = build_chat_request(request, endpoint=endpoint, model=model)
         if callable(getattr(provider, "prepare_body", None)):
             upstream_request = provider.prepare_body(upstream_request)
+    budget = {"original_stop_sequences": list(reviewer_stop_sequences(upstream_request))}
     if omit_stop_sequences:
         upstream_request.pop("stop", None)
         upstream_request.pop("stop_sequences", None)
-    budget["original_stop_sequences"] = budget["request_stop_sequences"]
     budget["request_stop_sequences"] = list(reviewer_stop_sequences(upstream_request))
     budget["stop_policy"] = "omit" if omit_stop_sequences else "preserve"
     budget["upstream_endpoint"] = "anthropic.messages" if native else "openai.chat"
@@ -266,27 +258,17 @@ async def rerun_single_reviewer(
         return {"success": False, "context_id": context_id, "reviewer_dir": reviewer_dir.name}
     elapsed_ms = int((time.monotonic() - started) * 1000)
     write_json(target_dir / "response.upstream.json", response)
-    raw_decision_status = reviewer_decision_status(response, request=upstream_request)
+    manifest_path = reviewer_dir.parents[2] / "manifest.json"
+    manifest = load_json(manifest_path) if manifest_path.exists() else {}
+    agent = manifest.get("agent") or ("claude" if endpoint == "anthropic.messages" else "codex")
+    decision = classify_reviewer_response(agent, response)
+    success = decision.outcome in {"review_allowed", "review_denied"}
+    decision_status = "present" if success else "missing"
     classification = {
         "provider": getattr(provider, "name", ""),
-        "kimi_api_protocol": settings.kimi_api_protocol if native else None,
+        "normalized_decision": decision.outcome,
         **budget,
     }
-    compatibility_evidence = {
-        **classification,
-        "decision_compatibility": KIMI_NATIVE_STAGE1_STOP_COMPATIBILITY,
-    }
-    compatibility_decision = kimi_native_stage1_stop_decision(
-        response, request=upstream_request, provenance=compatibility_evidence,
-    ) if native and raw_decision_status == "missing" else ""
-    if compatibility_decision:
-        classification = compatibility_evidence
-    decision_status = "present" if compatibility_decision else raw_decision_status
-    classification.update({
-        "raw_decision_status": raw_decision_status,
-        "normalized_decision": compatibility_decision or visible_review_decision(response, request=upstream_request),
-    })
-    success = decision_status == "present"
     write_json(
         target_dir / "meta.json",
         {

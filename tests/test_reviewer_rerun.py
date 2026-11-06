@@ -7,7 +7,7 @@ from pathlib import Path
 
 from router.config import Settings
 from router.providers.registry import build_providers
-from scripts.replay_reviewer_runs import (
+from scripts.rerun_reviewer_requests import (
     build_chat_request,
     build_settings_for_provider,
     default_output_names,
@@ -102,6 +102,27 @@ class ReviewerRerunScriptTest(unittest.TestCase):
             failed_after_success = iter_failed_reviewer_dirs(run_root, "reviewer_reruns/kimi-k2.7-code")
 
             self.assertEqual(failed_after_success, [])
+
+
+class ReviewerExecutionTest(unittest.IsolatedAsyncioTestCase):
+    async def test_rerun_preserves_requests_and_uses_current_analysis_classifier(self):
+        from unittest.mock import AsyncMock
+        from scripts.rerun_reviewer_requests import rerun_single_reviewer
+        for text, expected in [('<block>no</block>', True), ('Unable to decide', False)]:
+            with self.subTest(text=text), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                reviewer = root / 'experiments/ctx/router/traces/0000-reviewer-anthropic.messages'
+                reviewer.mkdir(parents=True)
+                request = {'model': 'original', 'max_tokens': 64, 'messages': [{'role': 'user', 'content': 'Review the action'}]}
+                write_json(reviewer / 'request.agent.json', request)
+                write_json(reviewer.parents[2] / 'manifest.json', {'agent': 'claude'})
+                provider = type('Provider', (), {'name': 'deepseek', 'chat_completion': AsyncMock(return_value={
+                    'choices': [{'message': {'role': 'assistant', 'content': text}}]})})()
+                result = await rerun_single_reviewer(reviewer, provider=provider, model='review-model',
+                    output_root=root / 'reruns', settings=Settings(_env_file=None))
+                self.assertEqual(result['success'], expected)
+                self.assertEqual(json.loads((reviewer / 'request.agent.json').read_text()), request)
+                self.assertEqual(provider.chat_completion.call_args.args[0]['model'], 'review-model')
 
 
 if __name__ == "__main__":

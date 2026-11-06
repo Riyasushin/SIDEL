@@ -234,6 +234,14 @@ def extract_trace_metadata(body: dict[str, Any], context: ExperimentContext, end
 # reviewer 分类只用于分析归因，不作为是否执行工具调用的判定依据。
 def infer_request_role(endpoint: str, body: dict[str, Any], context: ExperimentContext) -> str:
     model = str(body.get("model") or "").lower()
+    if context.agent == "opencode" and endpoint == "openai.chat":
+        messages = body.get("messages", [])
+        if isinstance(messages, list) and any(
+            isinstance(message, dict) and message.get("role") == "system"
+            and extract_message_text(message.get("content")).startswith("You are a title generator.")
+            for message in messages
+        ):
+            return "title"
     if context.agent == "codex" and endpoint == "openai.responses" and "review" in model:
         return "reviewer"
     if context.agent == "claude" and endpoint == "anthropic.messages" and looks_like_claude_auto_review(body):

@@ -7,7 +7,7 @@
 `swebench_container/` 只负责容器运行：
 
 - 解析或接收官方 SWE-bench task image。
-- 为 Codex / Claude 构造 adapter-specific env 和 command。
+- 为 Codex / Claude Code / OpenCode / Cursor 构造 adapter-specific env 和 command。
 - 在 `/testbed` 中运行 agent。
 - 保存 stdout、stderr、metadata、patch、git status 和 Docker inspect。
 
@@ -51,6 +51,10 @@ artifacts/runs/<run_id>/
     details.csv
     summary.json
 ```
+
+Claude `bypassPermissions` runs as the dedicated non-root `sidel` user inside
+the task image; other modes preserve the existing task-image user. Rebuild
+wrapper images after updating agent tooling (`--force-image-rebuild`).
 
 ## Replay Semantics
 
