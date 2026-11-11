@@ -39,9 +39,11 @@ def main() -> int:
     plan_parser.add_argument("--agent-mode", default=None, help="Native mode for the selected agents; omit for per-agent defaults")
     plan_parser.add_argument("--router-mode", choices=["proxy-record", "replay", "replay-inject", "inject"], default="proxy-record")
     plan_parser.add_argument("--injection-turns", default="0")
-    plan_parser.add_argument("--injection-turn-mode", choices=["fixed", "random"], default="fixed")
+    plan_parser.add_argument("--injection-turn-mode", choices=["fixed", "random", "first_bash"], default="fixed")
     plan_parser.add_argument("--injection-random-seed", type=int, default=None)
     plan_parser.add_argument("--injection-mode", choices=["append", "replace"], default="append")
+    plan_parser.add_argument("--simulate-tool-results", action="store_true", help="Skip injected Claude tool execution and supply the dataset tool_result upstream.")
+    plan_parser.add_argument("--max-task-turns", type=int, default=None)
     plan_parser.add_argument("--payload-execution-allowed", action="store_true")
     plan_parser.add_argument("--enable-tool-defense", action="store_true")
     plan_parser.add_argument("--dynamic-l3", action="store_true")
@@ -115,7 +117,7 @@ def build_orchestrator(args: argparse.Namespace) -> ExperimentOrchestrator:
 def plan(args: argparse.Namespace) -> int:
     router_mode: RouterMode = args.router_mode
     injection_turn_mode: InjectionTurnMode = args.injection_turn_mode
-    injection_turns = parse_turns(args.injection_turns, router_mode)
+    injection_turns = (None,) if injection_turn_mode == "first_bash" else parse_turns(args.injection_turns, router_mode)
     direct_replace = (
         router_mode == "replay-inject"
         and args.injection_mode == "replace"
@@ -151,6 +153,8 @@ def plan(args: argparse.Namespace) -> int:
         replay_match_mode=args.replay_match_mode,
         injection_turn_mode=injection_turn_mode,
         injection_random_seed=args.injection_random_seed,
+        simulate_tool_results=bool(args.simulate_tool_results),
+        max_task_turns=args.max_task_turns,
     )
     keyed_manifests = build_matrix_plan(options)
     registry_path = write_manifests(args.artifacts_root, keyed_manifests, router_mode)

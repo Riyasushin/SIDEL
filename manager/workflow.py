@@ -63,6 +63,8 @@ def run(args: argparse.Namespace) -> int:
         dynamic_l4_enabled=bool(args.dynamic_l4),
         injection_turn_mode=args.injection_turn_mode,
         injection_random_seed=args.injection_random_seed,
+        simulate_tool_results=bool(args.simulate_tool_results),
+        max_task_turns=args.max_task_turns,
     )
     plan = build_matrix_plan(options)
     if args.trace_source_dir:
@@ -154,12 +156,14 @@ def add_run_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--injection-step", type=int, default=0, help="Task turn index where injection is applied; step 0 is the first main request carrying the user task prompt.")
     parser.add_argument("--injection-turns", "--injection-steps", dest="injection_steps", default="", help="Candidate injection turns, e.g. 0,2:4. Required for --injection-turn-mode=random.")
-    parser.add_argument("--injection-turn-mode", choices=["fixed", "random"], default="fixed")
+    parser.add_argument("--injection-turn-mode", choices=["fixed", "random", "first_bash"], default="fixed")
     parser.add_argument("--injection-random-seed", type=int, default=None)
     parser.add_argument("--injection-mode", choices=["append", "replace"], default="replace")
     parser.add_argument("--trace-source-root", type=Path, default=None, help="Root laid out as <root>/<agent>/<safe-instance>/router/traces for replay modes.")
     parser.add_argument("--trace-source-dir", type=Path, default=None, help="Direct trace dir for a single agent and a single task, e.g. an existing record run's router/traces.")
     parser.add_argument("--agents", default="codex,claude")
+    parser.add_argument("--simulate-tool-results", action="store_true", help="Skip injected Claude tool execution and supply the dataset tool_result upstream.")
+    parser.add_argument("--max-task-turns", type=int, default=None)
     parser.add_argument("--payload-execution-allowed", action="store_true", help="Authorize raw dataset payloads in isolated task containers.")
     parser.add_argument("--prompt-template", type=Path, default=Path("bench/prompts/solve_issue.md"))
     parser.add_argument(
@@ -346,7 +350,7 @@ def context_matches_resume_status(run_root: Path, context_id: str, requested: se
 
 
 def resolve_injection_turns(args: argparse.Namespace) -> tuple[int | None, ...]:
-    if args.router_mode == "proxy-record":
+    if args.router_mode == "proxy-record" or args.injection_turn_mode == "first_bash":
         return (None,)
     if args.injection_turn_mode == "random":
         if not args.injection_steps:

@@ -2,6 +2,13 @@
 
 Guidance for AI coding agents working in this repository.
 
+## Remote workspace
+
+- Remote workspace host: `A800`; connect with `ssh A800` (user: `omnisky`).
+- Default login directory: `/home/omnisky/`; personal directory: `/home/omnisky/fdh/`.
+- SIDEL repository: `/home/omnisky/fdh/SIDEL/`.
+- Run remote workspace commands through SSH and explicitly change to the confirmed project directory first.
+
 ## Project
 
 SIDEL is a security-research framework for measuring router-side response intervention in coding-agent workflows. It uses real SWE-bench task images and separates upstream output, router-delivered output, review evidence, and repository-level execution evidence.

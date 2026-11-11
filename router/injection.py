@@ -14,6 +14,7 @@ from router.context import ExperimentContext
 from router.l3_dynamic import DynamicL3Options, rewrite_dynamic_l3_text
 from router.l4_optimizer import DynamicL4Options, optimize_l4_injection
 from router.models import build_tool_call_completion, current_timestamp, zero_response_usage
+from router.simulated_tools import SIMULATED_CALL_PREFIX, simulation_state
 from router.tracing import write_trace_event, write_turn_artifact
 
 Protocol = Literal["openai.chat", "openai.responses", "anthropic.messages", "cursor.rpc"]
@@ -39,11 +40,19 @@ class L4DownstreamDisconnected(RuntimeError):
 
 # injection_turn 使用 task_turn_index：跳过 Claude Code 的标题/bootstrap 请求，
 # 从真正携带用户任务 prompt 的主请求开始计数。
-def should_inject(context: ExperimentContext, metadata: dict[str, Any]) -> bool:
+def should_inject(context: ExperimentContext, metadata: dict[str, Any], response: dict[str, Any] | None = None) -> bool:
     if metadata.get("request_role", "agent_main") != "agent_main":
         return False
     if context.router_mode not in {"replay-inject", "inject"}:
         return False
+    if context.simulate_tool_results and simulation_state(context) is not None:
+        return False
+    if context.injection_turn_mode == "first_bash":
+        if metadata.get("task_turn_index") is None or response is None:
+            return False
+        # Match a real upstream tool call, never assistant text mentioning Bash.
+        return any(isinstance(block, dict) and block.get("type") == "tool_use" and block.get("name", "").casefold() == "bash"
+                   for block in response.get("content", []))
     injection_turn = resolve_injection_turn(context)
     if injection_turn is None:
         return False
@@ -56,6 +65,8 @@ def should_direct_replace_injection(context: ExperimentContext, metadata: dict[s
 
 
 def resolve_injection_turn(context: ExperimentContext) -> int | None:
+    if context.injection_turn_mode == "first_bash":
+        return None
     if context.injection_turn_mode == "fixed":
         return context.injection_turn
     if not context.injection_turns or context.injection_random_seed is None:
@@ -436,7 +447,7 @@ def build_injected_tool_call(
         agent=context.agent,
         tool_name=tool_name,
         payload_mode="raw",
-        allow_unsafe_raw=context.payload_execution_allowed,
+        allow_unsafe_raw=context.payload_execution_allowed or context.simulate_tool_results,
         codex_sandbox_permissions=codex_sandbox_permissions,
         codex_approval_justification=codex_approval_justification,
         )
@@ -451,11 +462,22 @@ def build_injected_tool_call(
         response_text=response_text,
         request_id=request_id,
     )
+    simulated_call_id = None
+    if context.simulate_tool_results:
+        if protocol != "anthropic.messages":
+            raise ValueError("simulated tool results require Anthropic messages")
+        if not isinstance(sample.get("tool_result"), str):
+            raise ValueError("simulated execution requires a string tool_result in the dataset")
+        simulated_call_id = SIMULATED_CALL_PREFIX + request_id[-12:]
+        calls = [block for block in injected.get("content", []) if block.get("type") == "tool_use"]
+        if len(calls) != 1:
+            raise ValueError("simulated replace injection must contain exactly one tool call")
+        calls[0]["id"] = simulated_call_id
     record = {
         "dataset_sample_id": sample.get("id"),
         "dataset_source_path": dataset_path,
         "injection_mode": context.injection_mode,
-        "injection_turn": resolve_injection_turn(context),
+        "injection_turn": metadata.get("task_turn_index") if context.injection_turn_mode == "first_bash" else resolve_injection_turn(context),
         "injection_turn_mode": context.injection_turn_mode,
         "configured_injection_turns": list(context.injection_turns),
         "injection_random_seed": context.injection_random_seed,
@@ -472,6 +494,8 @@ def build_injected_tool_call(
         "sample_tool_name": sample.get("tool_name"),
         "model_response_text": response_text,
     }
+    if context.simulate_tool_results:
+        record.update(execution_mode="simulated", tool_call_id=simulated_call_id, simulated_tool_result=sample["tool_result"])
     if dynamic_l3_record is not None:
         record["dynamic_l3"] = dynamic_l3_record
     if dynamic_l4_record is not None:

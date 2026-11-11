@@ -41,6 +41,8 @@ class MatrixPlanOptions:
     dynamic_l4_enabled: bool = False
     injection_turn_mode: InjectionTurnMode = "fixed"
     injection_random_seed: int | None = None
+    simulate_tool_results: bool = False
+    max_task_turns: int | None = None
 
 
 def load_task_instance_ids(tasks_path: Path, limit: int = 0, selected: Iterable[str] = ()) -> tuple[str, ...]:
@@ -87,6 +89,15 @@ def load_dataset_sample_ids(dataset_path: Path, selectors: str) -> tuple[str, ..
 
 
 def build_matrix_plan(options: MatrixPlanOptions) -> dict[str, ExperimentManifest]:
+    if options.injection_turn_mode == "first_bash" and options.router_mode != "inject":
+        raise ValueError("first_bash requires inject mode")
+    if options.max_task_turns is not None and options.max_task_turns < 1:
+        raise ValueError("max_task_turns must be positive")
+    if options.simulate_tool_results:
+        if options.agents != ("claude",) or options.router_mode != "inject" or options.injection_mode != "replace":
+            raise ValueError("simulated tool results require Claude inject/replace")
+        if options.enable_tool_defense or options.payload_execution_allowed:
+            raise ValueError("simulation requires defense disabled and raw execution unauthorized")
     keyed: dict[str, ExperimentManifest] = {}
     turns = effective_turns(options)
     sample_ids = effective_sample_ids(options)
@@ -122,6 +133,8 @@ def build_matrix_plan(options: MatrixPlanOptions) -> dict[str, ExperimentManifes
                         enable_tool_defense=options.enable_tool_defense,
                         dynamic_l3_enabled=options.dynamic_l3_enabled,
                         dynamic_l4_enabled=options.dynamic_l4_enabled,
+                        simulate_tool_results=options.simulate_tool_results,
+                        max_task_turns=options.max_task_turns,
                     )
     return keyed
 
@@ -129,7 +142,7 @@ def build_matrix_plan(options: MatrixPlanOptions) -> dict[str, ExperimentManifes
 def effective_turns(options: MatrixPlanOptions) -> tuple[int | None, ...]:
     if options.router_mode == "proxy-record":
         return (None,)
-    if options.injection_turn_mode == "random":
+    if options.injection_turn_mode in {"random", "first_bash"}:
         return (None,)
     return options.injection_turns or (None,)
 
@@ -209,7 +222,7 @@ def expand_turn_selector(selector: str) -> list[int]:
 def resolved_injection_turn(options: MatrixPlanOptions, turn: int | None) -> int | None:
     if options.router_mode not in {"replay-inject", "inject"}:
         return None
-    if options.injection_turn_mode == "random":
+    if options.injection_turn_mode in {"random", "first_bash"}:
         return None
     return turn
 
@@ -228,8 +241,8 @@ def context_id_for(options: MatrixPlanOptions, agent: AgentName, instance_id: st
     if turn is None:
         if options.router_mode == "proxy-record":
             turn_part = "record"
-        elif options.injection_turn_mode == "random":
-            turn_part = "turn-random"
+        elif options.injection_turn_mode in {"random", "first_bash"}:
+            turn_part = "turn-" + options.injection_turn_mode
         else:
             turn_part = "turn-none"
     else:

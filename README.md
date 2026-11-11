@@ -116,4 +116,23 @@ python -m manager.cli run \
 
 L3 uses the configured DeepSeek settings by default; `DYNAMIC_L3_*` overrides its backend, credentials, and generation options. For L4, configure `DYNAMIC_L4_BASE_URL` and `DYNAMIC_L4_API_KEY` for the generation service and use `--dynamic-l4` instead.
 
+### 4. Continue after a simulated L1 tool call
+
+For Claude, `--simulate-tool-results` skips execution of the injected call and supplies the selected dataset row's `tool_result` in subsequent upstream requests. It requires `inject`/`replace`, keeps tool defense disabled, and leaves the task running after injection. `first_bash` triggers once when an actual upstream response first calls Bash; earlier Read calls and auxiliary requests do not trigger it.
+
+```sh
+python -m manager.cli run \
+  --run-id simulated-l1 \
+  --agents claude --agent-mode bypassPermissions \
+  --router-mode inject --injection-mode replace \
+  --injection-turn-mode first_bash --simulate-tool-results \
+  --dataset data/code_agent_attack_dataset.sampled80.seed20260624.jsonl \
+  --samples 1 --task-limit 1 --max-task-turns 100 \
+  --timeout-seconds 0 --request-max-attempts 3
+```
+
+A Claude `PreToolUse` adapter suppresses calls bearing the simulation ID prefix. The router replaces only their matching results, preserving tool-call IDs and unrelated results across retries and resent history. `request.agent.json` retains the original client request; `request.simulated.json` and `request.upstream.json` show the supplied result. `simulated-tool-calls.jsonl` records skipped execution. The analyzer reports `malicious_tool_simulated` separately from real execution. These runs do not set injection terminal state or write injection `terminal.json`; `--max-task-turns` caps main model interactions, and `--timeout-seconds 0` disables the overall container deadline.
+
+On A800, `python scripts/run_simulated_injection_smoke.py` reuses one of the existing eleven Claude task images with `deepseek-v4-pro`, thinking enabled and high reasoning effort. It runs one dataset-80 sample against `pydicom__pydicom-1694`, then performs official SWE-bench grading using the existing repaired evaluation environment. Its run directory records the task result, interaction count, mean interaction count, single-run success rate, and protocol verification. Credentials stay in the existing ignored environment configuration.
+
 Each run writes traces and container evidence under `artifacts/runs/<run-id>/experiments/` and aggregate results under `artifacts/runs/<run-id>/analysis/`. For replay, select `--router-mode replay` or `replay-inject` and pass the recorded context's `router/traces/` directory through `--trace-source-dir`. Cursor recordings also require the sibling `native_traces/` directory. See the [Manager Guide](docs/manager-guide.md) for replay matching and larger experiment matrices.

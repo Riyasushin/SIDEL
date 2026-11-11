@@ -20,7 +20,7 @@ from router.config import ReplayMatchMode, Settings
 
 RouterMode = Literal["proxy-record", "replay", "replay-inject", "inject"]
 InjectionMode = Literal["append", "replace"]
-InjectionTurnMode = Literal["fixed", "random"]
+InjectionTurnMode = Literal["fixed", "random", "first_bash"]
 
 
 @dataclass(frozen=True)
@@ -49,6 +49,21 @@ class ExperimentContext:
     enable_tool_defense: bool = False
     dynamic_l3_enabled: bool = False
     dynamic_l4_enabled: bool = False
+    simulate_tool_results: bool = False
+    max_task_turns: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.max_task_turns is not None and self.max_task_turns < 1:
+            raise ValueError("max_task_turns must be positive")
+        if self.injection_turn_mode == "first_bash" and self.router_mode != "inject":
+            raise ValueError("first_bash requires inject mode")
+        if self.simulate_tool_results:
+            if self.agent != "claude" or self.router_mode != "inject" or self.injection_mode != "replace":
+                raise ValueError("simulated tool results require Claude inject/replace")
+            if self.enable_tool_defense:
+                raise ValueError("simulated execution requires tool defense to be disabled")
+            if self.payload_execution_allowed:
+                raise ValueError("simulated execution cannot authorize raw payload execution")
 
     @property
     def api_key_hash(self) -> str:
@@ -76,6 +91,8 @@ class ExperimentContext:
             "enable_tool_defense": self.enable_tool_defense,
             "dynamic_l3_enabled": self.dynamic_l3_enabled,
             "dynamic_l4_enabled": self.dynamic_l4_enabled,
+            "simulate_tool_results": self.simulate_tool_results,
+            "max_task_turns": self.max_task_turns,
             "router_api_key_hash": self.api_key_hash,
             "schema_version": 1,
         }
@@ -152,6 +169,8 @@ def contexts_from_payload(payload: dict[str, Any], settings: Settings) -> list[E
                 enable_tool_defense=bool(raw_context.get("enable_tool_defense", False)),
                 dynamic_l3_enabled=bool(raw_context.get("dynamic_l3_enabled", settings.attack_dynamic_l3_enabled)),
                 dynamic_l4_enabled=bool(raw_context.get("dynamic_l4_enabled", settings.attack_dynamic_l4_enabled)),
+                simulate_tool_results=bool(raw_context.get("simulate_tool_results", settings.attack_simulate_tool_results)),
+                max_task_turns=optional_int(raw_context.get("max_task_turns", settings.router_max_task_turns)),
             )
         )
     return contexts
@@ -179,13 +198,15 @@ def single_context_from_settings(settings: Settings) -> ExperimentContext:
         timeout_seconds=settings.context_timeout_seconds,
         replay_strict=settings.router_replay_strict,
         replay_response_file=settings.router_replay_response_file,
-        injection_turn_mode="fixed",
+        injection_turn_mode=settings.attack_injection_turn_mode,
         injection_turns=(settings.attack_injection_turn,),
         injection_random_seed=None,
         replay_match_mode=normalize_replay_match_mode(settings.router_replay_match_mode),
         enable_tool_defense=False,
         dynamic_l3_enabled=settings.attack_dynamic_l3_enabled,
         dynamic_l4_enabled=settings.attack_dynamic_l4_enabled,
+        simulate_tool_results=settings.attack_simulate_tool_results,
+        max_task_turns=settings.router_max_task_turns,
     )
 
 
@@ -209,7 +230,7 @@ def normalize_injection_mode(value: str) -> InjectionMode:
 
 
 def normalize_injection_turn_mode(value: str) -> InjectionTurnMode:
-    if value not in {"fixed", "random"}:
+    if value not in {"fixed", "random", "first_bash"}:
         raise ValueError(f"unsupported injection turn mode: {value}")
     return value  # type: ignore[return-value]
 

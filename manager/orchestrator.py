@@ -53,6 +53,8 @@ class ExperimentOrchestrator:
             timeout_seconds=manifest.timeout_seconds,
             platform=os.environ.get("DOCKER_PLATFORM", "linux/amd64"),
             docker_inspect_path=context_root / "container" / "docker.inspect.json",
+            simulate_tool_results=manifest.simulate_tool_results,
+            max_task_turns=manifest.max_task_turns,
         )
 
 

@@ -29,6 +29,7 @@ from router.providers.registry import build_providers
 from router.replay import ReplayLookupError, load_replay_response
 from router.request_lifecycle import begin_replay_turn, finish_replay_turn
 from router.request_gate import serialize_context_request
+from router.simulated_tools import prepare_simulated_request
 from router.timeout_utils import clamp_tool_timeout_fields
 from router.tracing import rollback_task_turn_index, write_trace_event, write_turn_artifact
 
@@ -181,7 +182,7 @@ async def anthropic_messages(
     record_request("anthropic.messages", body)
     try:
         response, before_injection, injection = await route_anthropic_messages(
-            body=body,
+            body=prepare_simulated_request(body, context, metadata),
             user_agent=user_agent,
             anthropic_version=anthropic_version,
             anthropic_beta=anthropic_beta,
@@ -233,7 +234,7 @@ async def route_openai_chat(
     injection = None
     if replay is not None:
         write_turn_artifact(context, metadata, "replay.json", replay)
-    if should_inject(context, metadata):
+    if should_inject(context, metadata, response):
         before_injection = response
         response, injection = await inject_with_dynamic(
             protocol="openai.chat",
@@ -276,7 +277,7 @@ async def route_openai_responses(
     injection = None
     if replay is not None:
         write_turn_artifact(context, metadata, "replay.json", replay)
-    if should_inject(context, metadata):
+    if should_inject(context, metadata, response):
         before_injection = response
         response, injection = await inject_with_dynamic(
             protocol="openai.responses",
@@ -331,7 +332,7 @@ async def route_anthropic_messages(
     injection = None
     if replay is not None:
         write_turn_artifact(context, metadata, "replay.json", replay)
-    if should_inject(context, metadata):
+    if should_inject(context, metadata, response):
         before_injection = response
         response, injection = await inject_with_dynamic(
             protocol="anthropic.messages",
@@ -355,9 +356,11 @@ async def inject_with_dynamic(**kwargs: Any) -> tuple[dict[str, Any], dict[str, 
     context = kwargs["context"]
     dynamic_l3 = kwargs.pop("dynamic_l3")
     dynamic_l4 = kwargs.pop("dynamic_l4")
+    is_downstream_disconnected = kwargs.pop("is_downstream_disconnected", None)
     if not context.dynamic_l3_enabled and not context.dynamic_l4_enabled:
         return inject_tool_call(**kwargs)
-    return await inject_tool_call_async(**kwargs, dynamic_l3=dynamic_l3, dynamic_l4=dynamic_l4)
+    return await inject_tool_call_async(**kwargs, dynamic_l3=dynamic_l3, dynamic_l4=dynamic_l4,
+                                      is_downstream_disconnected=is_downstream_disconnected)
 
 
 def dynamic_l3_options(context: ExperimentContext, settings: Settings) -> DynamicL3Options:

@@ -7,9 +7,10 @@ from fastapi import HTTPException
 
 from router.context import ExperimentContext
 from router.session_state import mark_injection_completed, mark_replay_completed, terminal_state_for
+from router.simulated_tools import register_simulated_injection
 from router.timeout_utils import clamp_tool_timeout_fields
 from router.tool_defense import apply_tool_defense
-from router.tracing import extract_trace_metadata, stable_hash, write_trace_event, write_turn_artifact
+from router.tracing import extract_trace_metadata, rollback_task_turn_index, stable_hash, write_trace_event, write_turn_artifact
 
 REPLAY_TURN_ENDPOINTS = frozenset({"openai.chat", "openai.responses", "anthropic.messages"})
 AUXILIARY_ENDPOINTS = frozenset({"openai.models", "anthropic.count_tokens", "router.health", "router.debug"})
@@ -42,6 +43,11 @@ def begin_replay_turn(endpoint: str, body: dict[str, Any], context: ExperimentCo
     write_turn_artifact(context, metadata, "manifest.json", context.public_metadata())
     write_turn_artifact(context, metadata, "request.agent.json", body)
     stop_if_context_terminal(context, metadata)
+    task_turn = metadata.get("task_turn_index")
+    if context.max_task_turns is not None and task_turn is not None and task_turn >= context.max_task_turns:
+        write_turn_artifact(context, metadata, "limit_reached.json", {"max_task_turns": context.max_task_turns, "task_turn_index": task_turn})
+        rollback_task_turn_index(context, metadata)
+        raise HTTPException(400, "Experiment main interaction limit reached")
     return metadata
 
 
@@ -111,7 +117,10 @@ def finish_replay_turn(
         )
     if injection is not None:
         write_turn_artifact(context, metadata, "injection.json", injection)
-        mark_injection_completed(context, metadata, injection)
+        if context.simulate_tool_results:
+            register_simulated_injection(context, metadata, injection)
+        else:
+            mark_injection_completed(context, metadata, injection)
     elif should_mark_replay_completed(context, metadata):
         mark_replay_completed(context, metadata)
     write_turn_artifact(context, metadata, "metadata.json", metadata)

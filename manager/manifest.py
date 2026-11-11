@@ -11,7 +11,7 @@ from code_agents import AgentMode, AgentName
 
 RouterMode = Literal["proxy-record", "replay", "replay-inject", "inject"]
 InjectionMode = Literal["append", "replace"]
-InjectionTurnMode = Literal["fixed", "random"]
+InjectionTurnMode = Literal["fixed", "random", "first_bash"]
 ReplayMatchMode = Literal["exact_request_hash", "task_turn_compatible"]
 
 
@@ -41,6 +41,8 @@ class ExperimentManifest:
     enable_tool_defense: bool = False
     dynamic_l3_enabled: bool = False
     dynamic_l4_enabled: bool = False
+    simulate_tool_results: bool = False
+    max_task_turns: int | None = None
 
 
 @dataclass(frozen=True)

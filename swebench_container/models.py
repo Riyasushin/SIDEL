@@ -24,6 +24,8 @@ class ContainerRunSpec:
     network: str = "bridge"
     environment: dict[str, str] = field(default_factory=dict)
     docker_inspect_path: Path | None = None
+    simulate_tool_results: bool = False
+    max_task_turns: int | None = None
 
 
 @dataclass(frozen=True)

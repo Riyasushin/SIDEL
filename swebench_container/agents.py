@@ -71,7 +71,16 @@ class ClaudeAdapter:
 
     def build_command(self, spec: ContainerRunSpec) -> list[str]:
         permission_mode = resolve_agent_mode(self.name, spec.agent_mode)
-        return ["claude", "--permission-mode", permission_mode, "--print", "__PROMPT_FROM_ARTIFACT__"]
+        command = ["claude", "--permission-mode", permission_mode]
+        if spec.max_task_turns is not None:
+            command += ["--max-turns", str(spec.max_task_turns)]
+        if spec.simulate_tool_results:
+            settings = {"hooks": {"PreToolUse": [{"matcher": "*", "hooks": [{
+                "type": "command", "command": "python3 /opt/sidel/claude_simulation_hook.py || { echo 'Simulation hook failed; execution skipped' >&2; exit 2; }",
+                "timeout": 10,
+            }]}]}}
+            command += ["--settings", json.dumps(settings)]
+        return command + ["--print", "__PROMPT_FROM_ARTIFACT__"]
 
     def protocol_preferences(self) -> dict[str, str]:
         return {"llm_protocol": "anthropic.messages", "review_mode": "claude"}

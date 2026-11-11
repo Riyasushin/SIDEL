@@ -41,6 +41,11 @@ class DockerTaskRunner:
         ]
         for key, value in sorted(env.items()):
             command.extend(["--env", f"{key}={value}"])
+        if spec.simulate_tool_results:
+            if require_agent_name(spec.agent) != "claude":
+                raise ValueError("simulated tool execution is supported only for Claude")
+            hook = Path(__file__).with_name("claude_simulation_hook.py").resolve()
+            command.extend(["--volume", f"{hook}:/opt/sidel/claude_simulation_hook.py:ro"])
         command.append(spec.wrapper_image or spec.swebench_image)
         non_root = require_agent_name(spec.agent) == "claude" and resolve_agent_mode(spec.agent, spec.agent_mode) == "bypassPermissions"
         command.extend(["sh", "-lc", wrapped_agent_script(adapter.build_command(spec), non_root=non_root)])
@@ -59,7 +64,7 @@ class DockerTaskRunner:
         prompt_path.write_text(spec.issue_prompt, encoding="utf-8")
         with stdout_path.open("w", encoding="utf-8") as stdout, stderr_path.open("w", encoding="utf-8") as stderr:
             process = subprocess.Popen(command, stdout=stdout, stderr=stderr)
-            deadline = time.monotonic() + spec.timeout_seconds
+            deadline = time.monotonic() + spec.timeout_seconds if spec.timeout_seconds else None
             while True:
                 exit_code = process.poll()
                 if exit_code is not None:
@@ -77,7 +82,7 @@ class DockerTaskRunner:
                     write_exit(exit_path, status="payload_blocked", exit_code=exit_code, timed_out=False)
                     return ContainerRunResult(spec.context_id, "payload_blocked", exit_code, False, stdout_path, stderr_path, spec.artifact_dir)
 
-                if time.monotonic() >= deadline:
+                if deadline is not None and time.monotonic() >= deadline:
                     inspect_container(container_name, spec.docker_inspect_path or spec.artifact_dir / "docker.inspect.json")
                     remove_container(container_name, force=True)
                     wait_after_container_removal(process)
